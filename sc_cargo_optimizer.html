@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>SC Haulmaster</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0f1419">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SC Haulmaster">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23000'/><text y='50' font-size='40' fill='%2300d4ff'>🚛</text><text y='80' font-size='20' fill='%23fff'>SC</text></svg>">
+    <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;SC Haulmaster&quot;,&quot;short_name&quot;:&quot;Haulmaster&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230f1419&quot;,&quot;theme_color&quot;:&quot;%2300d4ff&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23000'/><text y='50' font-size='40' fill='%2300d4ff'>🚛</text><text y='80' font-size='20' fill='%23fff'>SC</text></svg>&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 100%;
+            margin: 0;
+            padding: 10px;
+            background: linear-gradient(135deg, #0f1419 0%, #1a2332 100%);
+            color: #e0e6ed;
+            min-height: 100vh;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .container {
+            background: rgba(26, 35, 50, 0.9);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+            margin: 0 0 20px 0;
+            font-size: 2em;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: rgba(15, 20, 25, 0.6);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            color: #e0e6ed;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .nav-tab.active {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: white;
+        }
+        
+        .nav-tab:not(.active):hover {
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .section {
+            background: rgba(15, 20, 25, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        @media (min-width: 480px) {
+            .input-group {
+                flex-direction: row;
+                align-items: center;
+            }
+        }
+        
+        label {
+            font-weight: 600;
+            color: #00d4ff;
+            min-width: 120px;
+            font-size: 0.9em;
+        }
+        
+        input, select {
+            padding: 12px;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(15, 20, 25, 0.8);
+            color: #e0e6ed;
+            font-size: 16px;
+            flex: 1;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+            -webkit-appearance: none;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        button {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            min-height: 48px;
+            touch-action: manipulation;
+        }
+        
+        button:active {
+            transform: scale(0.95);
+        }
+        
+        button.secondary {
+            background: linear-gradient(135deg, #dc3545, #b02a37);
+        }
+        
+        button.small {
+            padding: 8px 12px;
+            font-size: 12px;
+            min-height: 36px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            flex: none;
+            cursor: pointer;
+            accent-color: #00d4ff;
+            background: rgba(15, 20, 25, 0.8);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 4px;
+            appearance: none;
+            -webkit-appearance: none;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .checkbox-group input[type="checkbox"]:checked {
+            background: #00d4ff;
+            border-color: #00d4ff;
+        }
+        
+        .checkbox-group input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #0f1419;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .checkbox-group input[type="checkbox"]:hover {
+            border-color: #00d4ff;
+            box-shadow: 0 0 5px rgba(0, 212, 255, 0.3);
+        }
+        
+        .checkbox-group label {
+            cursor: pointer;
+            color: #e0e6ed;
+            font-size: 0.9em;
+            min-width: auto;
+        }
+        
+        .results {
+            background: rgba(15, 20, 25, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        .result-item {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #00d4ff;
+        }
+        
+        .result-header {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .box-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .box-size {
+            background: rgba(0, 212, 255, 0.15);
+            padding: 10px 8px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            font-size: 0.9em;
+        }
+        
+        .efficiency {
+            background: rgba(0, 212, 255, 0.2);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            white-space: nowrap;
+        }
+        
+        .info-box {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .info-box h3 {
+            color: #ffc107;
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+        }
+        
+        .box-sizes-reference {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+            gap: 8px;
+            margin: 10px 0;
+        }
+        
+        .box-size strong {
+            display: block;
+            font-size: 1.1em;
+            color: #00d4ff;
+        }
+        
+        .toggleable {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(0, 212, 255, 0.5);
+            touch-action: manipulation;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .toggleable:active {
+            transform: scale(0.95);
+        }
+        
+        .toggleable.disabled {
+            background: rgba(220, 53, 69, 0.2);
+            border-color: rgba(220, 53, 69, 0.5);
+            opacity: 0.7;
+        }
+        
+        #boxSizesContent {
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        #boxSizesContent.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+        
+        .typeahead-container {
+            position: relative;
+            flex: 1;
+            min-width: 350px;
+        }
+        
+        @media (max-width: 768px) {
+            .typeahead-container {
+                min-width: 280px;
+            }
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(15, 20, 25, 0.95);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .dropdown-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+            transition: background-color 0.2s ease;
+        }
+        
+        .dropdown-item:hover, .dropdown-item.highlighted {
+            background: rgba(0, 212, 255, 0.2);
+        }
+        
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        
+        .dropdown-item-main {
+            color: #e0e6ed;
+            font-weight: 600;
+        }
+        
+        .dropdown-item-detail {
+            color: #999;
+            font-size: 0.8em;
+            margin-top: 2px;
+        }
+        
+        /* Hierarchical dropdown styles */
+        .dropdown-system {
+            background: rgba(0, 212, 255, 0.15);
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+        }
+        
+        .dropdown-system-header {
+            padding: 12px 15px;
+            color: #00d4ff;
+            font-weight: 700;
+            font-size: 1.1em;
+            cursor: default;
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .dropdown-region {
+            background: rgba(0, 212, 255, 0.08);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        .dropdown-region-header {
+            padding: 10px 15px 8px 25px;
+            color: #a0aec0;
+            font-weight: 600;
+            font-size: 0.95em;
+            cursor: default;
+            background: rgba(0, 212, 255, 0.05);
+        }
+        
+        .dropdown-location {
+            padding: 8px 15px 8px 40px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.05);
+            transition: background-color 0.2s ease;
+        }
+        
+        .dropdown-location:hover, .dropdown-location.highlighted {
+            background: rgba(0, 212, 255, 0.2);
+        }
+        
+        .dropdown-location:last-child {
+            border-bottom: none;
+        }
+        
+        .dropdown-location-text {
+            color: #e0e6ed;
+            font-weight: 500;
+        }
+        
+        .dropdown-no-results {
+            padding: 15px;
+            text-align: center;
+            color: #999;
+            font-style: italic;
+        }
+        
+        .destination-group {
+            margin-bottom: 30px;
+        }
+        
+        .destination-header {
+            background: rgba(0, 212, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #00d4ff;
+        }
+        
+        .destination-header h4 {
+            margin: 0 0 5px 0;
+            color: #00d4ff;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        
+        .destination-stats {
+            color: #e0e6ed;
+            font-size: 0.9em;
+        }
+        
+        .resource-list {
+            margin-top: 20px;
+        }
+        
+        .resource-item {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #00d4ff;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .resource-info {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .resource-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+        
+        .resource-scu {
+            color: #e0e6ed;
+            margin-bottom: 10px;
+        }
+        
+        .resource-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .summary-stats {
+            background: rgba(0, 212, 255, 0.15);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #00d4ff;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #e0e6ed;
+            margin-top: 5px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+            font-style: italic;
+        }
+        
+        .checkbox-group input[type="checkbox"]:hover {
+            border-color: #00d4ff;
+            box-shadow: 0 0 5px rgba(0, 212, 255, 0.3);
+        }
+        
+        .duplicate-status {
+            transition: all 0.3s ease;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        
+        .duplicate-status.active {
+            background: rgba(0, 212, 255, 0.1);
+            color: #00d4ff;
+        }
+        
+        .duplicate-status.inactive {
+            background: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚛 SC Haulmaster</h1>
+        
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('resources')">Resource Manager</button>
+            <button class="nav-tab" onclick="switchTab('optimizer')">SCU Optimizer</button>
+            <button class="nav-tab" onclick="switchTab('config')">Configuration</button>
+        </div>
+        
+        <!-- Resource Manager Tab -->
+        <div id="resources" class="tab-content active">
+            <div class="section">
+                <div class="input-group">
+                    <label for="resourceSelect">Resource:</label>
+                    <select id="resourceSelect">
+                        <option value="">Select a resource...</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label for="destinationInput">Destination:</label>
+                    <div class="typeahead-container">
+                        <input type="text" id="destinationInput" placeholder="Type destination name (e.g., HDMS-Anderson, Lorville)..." autocomplete="off">
+                        <div id="destinationDropdown" class="dropdown-menu"></div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="resourceSCU">SCU Amount:</label>
+                    <input type="number" id="resourceSCU" placeholder="Enter SCU amount" min="1">
+                    <button onclick="addResource()">Add Resource</button>
+                </div>
+            </div>
+            
+            <div id="resourcesSummary" class="summary-stats" style="display: none;">
+                <h3>Cargo Summary</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value" id="totalResources">0</span>
+                        <div class="stat-label">Resources</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="totalSCU">0</span>
+                        <div class="stat-label">Total SCU</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="totalBoxes">0</span>
+                        <div class="stat-label">Total Boxes</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="avgEfficiency">0%</span>
+                        <div class="stat-label">Avg Efficiency</div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; text-align: center;">
+                    <button class="secondary" onclick="clearAllResources()">Clear All Resources</button>
+                </div>
+            </div>
+            
+            <div class="resource-list">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>Resource List</h3>
+                    <div class="checkbox-group" style="margin: 0;">
+                        <input type="checkbox" id="preventDuplicates" checked>
+                        <label for="preventDuplicates">Prevent duplicate resource-destination pairs</label>
+                        <span id="duplicateStatus" class="duplicate-status" style="margin-left: 10px; font-size: 0.8em; color: #00d4ff;">✓ Active</span>
+                    </div>
+                </div>
+                <div id="resourceListContent">
+                    <div class="empty-state">
+                        No resources added yet. Add some resources above to get started!
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <h3>✅ Updated Destination Database</h3>
+                <p><strong>Fresh from <a href="https://uexcorp.space/resources/home/type/outposts/" target="_blank" rel="noopener" style="color: #00d4ff; text-decoration: none;">UEXcorp</a>!</strong> This destination list is now current as of Star Citizen 4.1.1 LIVE and includes:</p>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li><strong>Cargo Elevator Locations Only:</strong> All destinations have cargo elevators for delivery</li>
+                    <li><strong>Stanton System:</strong> Major landing zones, stations, Lagrange points, and outposts with cargo terminals</li>
+                    <li><strong>Pyro System:</strong> Alpha 4.0 outposts across Bloom, Monox, Terminus, and other moons</li>
+                    <li><strong>100+ Deliverable Locations:</strong> Every location supports cargo delivery via elevators</li>
+                </ul>
+                <p>Type any location name to search, or enter custom destinations manually!</p>
+            </div>
+            
+            <div class="info-box">
+                <h3>📦 How to Use This Tool</h3>
+                <p><strong>Perfect for organizing multiple delivery contracts!</strong> When you have several contracts and need to load your cargo grid efficiently:</p>
+                <ol style="margin: 10px 0; padding-left: 20px;">
+                    <li><strong>Add Your Contracts:</strong> For each delivery contract, add the resource, destination, and SCU amount</li>
+                    <li><strong>Review the Optimization:</strong> The tool shows you exactly how many boxes of each size you need</li>
+                    <li><strong>Organize Your Grid:</strong> Use the box breakdown to create separate piles for each destination</li>
+                    <li><strong>Load Efficiently:</strong> Stack the boxes according to the optimization to maximize space usage</li>
+                </ol>
+                <p><strong>Pro Tip:</strong> The efficiency percentage shows how well your cargo fits - higher is better! Each destination is grouped separately so you can easily see what goes where.</p>
+            </div>
+        </div>
+        
+        <!-- SCU Optimizer Tab -->
+        <div id="optimizer" class="tab-content">
+            <div class="section">
+                <div class="input-group">
+                    <label for="scuInput">Target SCU:</label>
+                    <input type="number" id="scuInput" placeholder="Enter SCU value (e.g., 100)" min="1">
+                    <button onclick="optimizeSingle()">Optimize</button>
+                </div>
+                
+                <div class="input-group">
+                    <label for="batchInput">Multiple SCU:</label>
+                    <input type="text" id="batchInput" placeholder="Enter multiple values (e.g., 100, 150, 200)">
+                    <button onclick="optimizeBatch()">Optimize All</button>
+                </div>
+            </div>
+            
+            <div id="optimizerResults" class="results" style="display: none;">
+                <h2>Optimization Results</h2>
+                <div id="optimizerResultContent"></div>
+            </div>
+        </div>
+        
+        <!-- Configuration Tab -->
+        <div id="config" class="tab-content">
+            <div class="section">
+                <h3>📦 Box Size Configuration</h3>
+                <p>Configure which box sizes are available for optimization. These settings are saved automatically and apply to both the Resource Manager and SCU Optimizer.</p>
+                
+                <div class="info-box">
+                    <h3>Available Box Sizes (SCU)</h3>
+                    <p>Click on box sizes to enable/disable them. Green checkmarks (✓) are enabled, red crosses (✗) are disabled.</p>
+                    <div class="box-sizes-reference">
+                        <div class="box-ref toggleable" data-size="1" onclick="toggleBoxSize(1)">1 SCU ✓</div>
+                        <div class="box-ref toggleable" data-size="2" onclick="toggleBoxSize(2)">2 SCU ✓</div>
+                        <div class="box-ref toggleable" data-size="4" onclick="toggleBoxSize(4)">4 SCU ✓</div>
+                        <div class="box-ref toggleable" data-size="8" onclick="toggleBoxSize(8)">8 SCU ✓</div>
+                        <div class="box-ref toggleable disabled" data-size="16" onclick="toggleBoxSize(16)">16 SCU ✗</div>
+                        <div class="box-ref toggleable disabled" data-size="24" onclick="toggleBoxSize(24)">24 SCU ✗</div>
+                        <div class="box-ref toggleable disabled" data-size="32" onclick="toggleBoxSize(32)">32 SCU ✗</div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>💾 Settings</h3>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="autoSave" checked>
+                        <label for="autoSave">Auto-save configuration changes</label>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button onclick="resetToDefaults()" class="secondary">Reset to Defaults</button>
+                        <button onclick="exportConfig()" style="margin-left: 10px;">Export Settings</button>
+                        <button onclick="importConfig()" style="margin-left: 10px;">Import Settings</button>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <h3>ℹ️ How It Works</h3>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>Automatic Saving:</strong> Your box size preferences are saved automatically</li>
+                        <li><strong>Cross-Tab Usage:</strong> Settings apply to both Resource Manager and SCU Optimizer</li>
+                        <li><strong>Browser Storage:</strong> Settings persist between browser sessions</li>
+                        <li><strong>Optimization Impact:</strong> Only enabled box sizes are used for calculations</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer style="text-align: center; padding: 2rem 0; margin-top: 2rem; border-top: 1px solid rgba(0, 212, 255, 0.1); color: #718096;">
+        <p>&copy; 2024 VayynePlays. Built with ❤️ and lots of ☕</p>
+        <p style="margin-top: 0.5rem;">
+            <a href="https://vayyneplays.github.io" style="color: #00d4ff; text-decoration: none; font-weight: 500;">← Back to Portfolio</a>
+        </p>
+    </footer>
+
+    <script>
+        // Available box sizes - can be toggled on/off
+        let ENABLED_BOX_SIZES = [8, 4, 2, 1];
+        const ALL_BOX_SIZES = [32, 24, 16, 8, 4, 2, 1];
+        
+        // Configuration storage keys
+        const STORAGE_KEYS = {
+            ENABLED_BOX_SIZES: 'sc_haulmaster_enabled_box_sizes',
+            AUTO_SAVE: 'sc_haulmaster_auto_save'
+        };
+        
+        // Resource list
+        let resourceList = [];
+        
+        // Star Citizen destinations - Updated from UEXcorp (4.1.1 LIVE)
+        // Only includes locations with cargo elevators for delivery
+        const DESTINATIONS_HIERARCHICAL = {
+            'Stanton': {
+                'Major Landing Zones': [
+                    'Area18', 'Lorville', 'New Babbage', 'Orison'
+                ],
+                'Major Stations': [
+                    'Everus Harbor', 'Seraphim Station', 'Grim HEX', 'Baijini Point', 'Tressler'
+                ],
+                'Lagrange Points': [
+                    'CRU-L1 Ambitious Dream Station', 'CRU-L4 Shallow Fields Station', 'CRU-L5 Beautiful Glen Station',
+                    'HUR-L1 Green Imperial Housing Exchange', 'HUR-L2 Faithful Dream Station', 'HUR-L3 Thundering Express Station', 
+                    'HUR-L4 Melodic Fields Station', 'HUR-L5 Loving Passion Station',
+                    'ARC-L1 Wide Forest Station', 'ARC-L2 Sparkling Glen Station', 'ARC-L3 Silver Spirit Station', 
+                    'ARC-L4 Charming Desire Station', 'ARC-L5 Unconstrained Valor Station',
+                    'MIC-L1 Shallow Frontier Station', 'MIC-L2 Long Forest Station', 'MIC-L3 Endless Odyssey Station', 
+                    'MIC-L4 Bright Blossom Station', 'MIC-L5 Independent Scholastic Station'
+                ],
+                'ArcCorp Outposts': [
+                    'Humboldt Mines', 'Loveridge Mineral Reserve', 'Shubin Mining Facility SAL-2', 'Shubin Mining Facility SAL-5', 'The Orphanage',
+                    'ArcCorp Mining Area 045', 'ArcCorp Mining Area 048', 'ArcCorp Mining Area 056', 'ArcCorp Mining Area 061', 
+                    'Paradise Cove', 'Samson & Son\'s Salvage Center', 'Shady Glen'
+                ],
+                'Crusader Outposts': [
+                    'Gallete Family Farms', 'Hickes Research', 'Private Property', 'Terra Mills HydroFarm', 'Tram & Myers Mining',
+                    'ArcCorp Mining Area 141', 'Bountiful Harvest Hydroponics', 'Brio\'s Breaker Yard', 'Kudre Ore', 
+                    'Nuen Waste Management', 'Shubin Mining Facility SCD-1', 'Jumptown',
+                    'ArcCorp Mining Area 157', 'Benson Mining Outpost', 'Deakins Research', 'NT-999-XX', 'NT-999-XXII'
+                ],
+                'Hurston Outposts': [
+                    'HDMS-Anderson', 'HDMS-Bezdek', 'HDMS-Edmond', 'HDMS-Hadley', 'HDMS-Hahn', 'HDMS-Lathan', 
+                    'HDMS-Norgaard', 'HDMS-Oparei', 'HDMS-Perlman', 'HDMS-Pinewood', 'HDMS-Ryder', 'HDMS-Stanhope', 
+                    'HDMS-Thedus', 'HDMS-Woodruff', 'Reclamation & Disposal Orinth', 'Weeping Cove', 'Maker\'s Point', 
+                    'Rappel', 'Picker\'s Field', 'Zephyr', 'Cutter\'s Rig', 'Finn\'s Folly', 'Ludlow', 'Sakura Sun Magnolia Workcenter'
+                ],
+                'MicroTech Outposts': [
+                    'Outpost 54', 'Raven\'s Roost', 'Shubin Mining Facility SM0-10', 
+                    'Shubin Mining Facility SM0-13', 'Shubin Mining Facility SM0-18', 'Shubin Mining Facility SM0-22', 
+                    'The Necropolis', 'Astor\'s Clearing', 'Harper\'s Point', 'Dunboro', 'Bloodshot Ridge', 'Frostbite', 
+                    'Ghost Hollow', 'Moreland Hills', 'Razor\'s Edge', 'Shubin Mining Facility SMCa-6', 'Shubin Mining Facility SMCa-8', 
+                    'Bud\'s Growery', 'Devlin Scrap & Salvage'
+                ]
+            },
+            'Pyro': {
+                'Bloom Outposts': [
+                    'Bueno Ravine', 'Shadowfall', 'Shepherd\'s Rest', 'The Golden Riviera', 'The Yard', 'Carver\'s Ridge', 
+                    'Frigid Knot', 'Narena\'s Rest', 'Windfall', 'Prospect Depot'
+                ],
+                'Monox Outposts': [
+                    'Jackson\'s Swap', 'Last Ditch', 'Sunset Mesa', 'Yang\'s Place', 'Arid Reach', 'Ostler\'s Claim', 'Slowburn Depot'
+                ],
+                'Pyro I Outposts': [
+                    'Rustville', 'Stag\'s Rut', 'Gray Gardens Depot'
+                ],
+                'Pyro IV & V Outposts': [
+                    'Chawla\'s Beach', 'Fallow Field', 'Goner\'s Deal', 'Sacren\'s Plot', 'Dinger\'s Depot'
+                ],
+                'Other Pyro Outposts': [
+                    'Prophet\'s Peak', 'Feo Canyon Depot', 'Ashland', 'Kabir\'s Post', 'Seer\'s Canyon'
+                ],
+                'Terminus Outposts': [
+                    'Blackrock Exchange', 'Bullock\'s Reach', 'Canard View', 'Kinder Plots', 'Last Landings', 
+                    'Rough Landing', 'Scarper\'s Turn', 'Stonetree', 'Watcher\'s Depot'
+                ]
+            }
+        };
+
+        // Flatten destinations for search functionality
+        const DESTINATIONS_BASIC = [];
+        Object.entries(DESTINATIONS_HIERARCHICAL).forEach(([system, regions]) => {
+            Object.entries(regions).forEach(([region, locations]) => {
+                locations.forEach(location => {
+                    DESTINATIONS_BASIC.push(location);
+                });
+            });
+        });
+        DESTINATIONS_BASIC.sort();
+        
+        // Star Citizen resources
+        const RESOURCES = [
+            'Agricium', 'Aluminum', 'Beryl', 'Borase', 'Chlorine', 'Copper', 'Corundum',
+            'Diamond', 'Fluorine', 'Gold', 'Hephaestanite', 'Hydrogen', 'Inert Materials',
+            'Iodine', 'Iron', 'Laranite', 'Quartz', 'Quantainium', 'Silicon', 'Taranite',
+            'Titanium', 'Tungsten', 'Waste', 'Medical Supplies', 'Food', 'Consumer Goods',
+            'Processed Food', 'Superconductors', 'WiDoW', 'SLAM', 'Maze', 'Neon', 'Etam',
+            'Scrap', 'Distilled Spirits', 'Stims', 'Astatine', 'Bexalite', 'Hadanite'
+        ].sort();
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadConfiguration();
+            populateResourceSelect();
+            setupTypeahead();
+            setupDuplicatePrevention();
+            setupAutoSave();
+            updateBoxSizeDisplay();
+        });
+        
+        function loadConfiguration() {
+            // Load enabled box sizes from localStorage
+            const savedBoxSizes = localStorage.getItem(STORAGE_KEYS.ENABLED_BOX_SIZES);
+            if (savedBoxSizes) {
+                try {
+                    ENABLED_BOX_SIZES = JSON.parse(savedBoxSizes);
+                } catch (e) {
+                    console.warn('Failed to load box sizes from localStorage, using defaults');
+                    ENABLED_BOX_SIZES = [8, 4, 2, 1];
+                }
+            }
+            
+            // Load auto-save setting
+            const savedAutoSave = localStorage.getItem(STORAGE_KEYS.AUTO_SAVE);
+            if (savedAutoSave !== null) {
+                document.getElementById('autoSave').checked = savedAutoSave === 'true';
+            }
+        }
+        
+        function saveConfiguration() {
+            if (document.getElementById('autoSave').checked) {
+                localStorage.setItem(STORAGE_KEYS.ENABLED_BOX_SIZES, JSON.stringify(ENABLED_BOX_SIZES));
+                localStorage.setItem(STORAGE_KEYS.AUTO_SAVE, document.getElementById('autoSave').checked.toString());
+            }
+        }
+        
+        function updateBoxSizeDisplay() {
+            ALL_BOX_SIZES.forEach(size => {
+                const boxElement = document.querySelector(`[data-size="${size}"]`);
+                if (boxElement) {
+                    const isEnabled = ENABLED_BOX_SIZES.includes(size);
+                    if (isEnabled) {
+                        boxElement.classList.remove('disabled');
+                        boxElement.textContent = `${size} SCU ✓`;
+                    } else {
+                        boxElement.classList.add('disabled');
+                        boxElement.textContent = `${size} SCU ✗`;
+                    }
+                }
+            });
+        }
+        
+        function resetToDefaults() {
+            if (confirm('Reset all configuration to defaults?')) {
+                ENABLED_BOX_SIZES = [8, 4, 2, 1];
+                document.getElementById('autoSave').checked = true;
+                updateBoxSizeDisplay();
+                saveConfiguration();
+                updateAllResourceOptimizations();
+            }
+        }
+        
+        function exportConfig() {
+            const config = {
+                enabledBoxSizes: ENABLED_BOX_SIZES,
+                autoSave: document.getElementById('autoSave').checked,
+                version: '1.0'
+            };
+            
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sc_haulmaster_config.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function importConfig() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const config = JSON.parse(e.target.result);
+                            if (config.enabledBoxSizes && Array.isArray(config.enabledBoxSizes)) {
+                                ENABLED_BOX_SIZES = config.enabledBoxSizes;
+                                if (config.autoSave !== undefined) {
+                                    document.getElementById('autoSave').checked = config.autoSave;
+                                }
+                                updateBoxSizeDisplay();
+                                saveConfiguration();
+                                updateAllResourceOptimizations();
+                                alert('Configuration imported successfully!');
+                            } else {
+                                alert('Invalid configuration file format.');
+                            }
+                        } catch (e) {
+                            alert('Failed to parse configuration file.');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+        
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function populateResourceSelect() {
+            const select = document.getElementById('resourceSelect');
+            RESOURCES.forEach(resource => {
+                const option = document.createElement('option');
+                option.value = resource;
+                option.textContent = resource;
+                select.appendChild(option);
+            });
+        }
+        
+        function setupTypeahead() {
+            const input = document.getElementById('destinationInput');
+            const dropdown = document.getElementById('destinationDropdown');
+            let selectedIndex = -1;
+            let selectableItems = [];
+            
+            // Show full hierarchy when input is focused and empty
+            input.addEventListener('focus', function() {
+                if (this.value.length === 0) {
+                    showFullHierarchy();
+                }
+            });
+            
+            input.addEventListener('input', function() {
+                const query = this.value.toLowerCase();
+                
+                if (query.length === 0) {
+                    showFullHierarchy();
+                    return;
+                }
+                
+                // Filter destinations based on query
+                const filteredResults = filterDestinations(query);
+                showFilteredResults(filteredResults);
+                selectedIndex = -1;
+            });
+            
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, selectableItems.length - 1);
+                    highlightItem();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, -1);
+                    highlightItem();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (selectedIndex >= 0 && selectableItems[selectedIndex]) {
+                        selectDestination(selectableItems[selectedIndex]);
+                    }
+                } else if (e.key === 'Escape') {
+                    hideDropdown();
+                }
+            });
+            
+            input.addEventListener('blur', function() {
+                // Delay hiding to allow click events
+                setTimeout(() => hideDropdown(), 150);
+            });
+            
+            function showFullHierarchy() {
+                dropdown.innerHTML = '';
+                selectableItems = [];
+                
+                Object.entries(DESTINATIONS_HIERARCHICAL).forEach(([system, regions]) => {
+                    const systemDiv = document.createElement('div');
+                    systemDiv.className = 'dropdown-system';
+                    
+                    const systemHeader = document.createElement('div');
+                    systemHeader.className = 'dropdown-system-header';
+                    systemHeader.textContent = system;
+                    systemDiv.appendChild(systemHeader);
+                    
+                    Object.entries(regions).forEach(([region, locations]) => {
+                        const regionDiv = document.createElement('div');
+                        regionDiv.className = 'dropdown-region';
+                        
+                        const regionHeader = document.createElement('div');
+                        regionHeader.className = 'dropdown-region-header';
+                        regionHeader.textContent = region;
+                        regionDiv.appendChild(regionHeader);
+                        
+                        locations.forEach(location => {
+                            const locationDiv = document.createElement('div');
+                            locationDiv.className = 'dropdown-location';
+                            locationDiv.innerHTML = `<div class="dropdown-location-text">${location}</div>`;
+                            locationDiv.addEventListener('click', () => selectDestination(location));
+                            regionDiv.appendChild(locationDiv);
+                            selectableItems.push(locationDiv);
+                        });
+                        
+                        systemDiv.appendChild(regionDiv);
+                    });
+                    
+                    dropdown.appendChild(systemDiv);
+                });
+                
+                dropdown.style.display = 'block';
+            }
+            
+            function filterDestinations(query) {
+                const results = [];
+                
+                Object.entries(DESTINATIONS_HIERARCHICAL).forEach(([system, regions]) => {
+                    const systemResults = { system, regions: {} };
+                    let hasMatches = false;
+                    
+                    Object.entries(regions).forEach(([region, locations]) => {
+                        const matchingLocations = locations.filter(location => 
+                            location.toLowerCase().includes(query)
+                        );
+                        
+                        if (matchingLocations.length > 0) {
+                            systemResults.regions[region] = matchingLocations;
+                            hasMatches = true;
+                        }
+                    });
+                    
+                    if (hasMatches) {
+                        results.push(systemResults);
+                    }
+                });
+                
+                return results;
+            }
+            
+            function showFilteredResults(filteredResults) {
+                dropdown.innerHTML = '';
+                selectableItems = [];
+                
+                if (filteredResults.length === 0) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'dropdown-no-results';
+                    noResults.textContent = 'No matches found. Try a different search term or enter custom destination.';
+                    dropdown.appendChild(noResults);
+                } else {
+                    filteredResults.forEach(({ system, regions }) => {
+                        const systemDiv = document.createElement('div');
+                        systemDiv.className = 'dropdown-system';
+                        
+                        const systemHeader = document.createElement('div');
+                        systemHeader.className = 'dropdown-system-header';
+                        systemHeader.textContent = system;
+                        systemDiv.appendChild(systemHeader);
+                        
+                        Object.entries(regions).forEach(([region, locations]) => {
+                            const regionDiv = document.createElement('div');
+                            regionDiv.className = 'dropdown-region';
+                            
+                            const regionHeader = document.createElement('div');
+                            regionHeader.className = 'dropdown-region-header';
+                            regionHeader.textContent = region;
+                            regionDiv.appendChild(regionHeader);
+                            
+                            locations.forEach(location => {
+                                const locationDiv = document.createElement('div');
+                                locationDiv.className = 'dropdown-location';
+                                locationDiv.innerHTML = `<div class="dropdown-location-text">${location}</div>`;
+                                locationDiv.addEventListener('click', () => selectDestination(location));
+                                regionDiv.appendChild(locationDiv);
+                                selectableItems.push(locationDiv);
+                            });
+                            
+                            systemDiv.appendChild(regionDiv);
+                        });
+                        
+                        dropdown.appendChild(systemDiv);
+                    });
+                }
+                
+                dropdown.style.display = 'block';
+            }
+            
+            function hideDropdown() {
+                dropdown.style.display = 'none';
+                selectedIndex = -1;
+            }
+            
+            function highlightItem() {
+                selectableItems.forEach((item, index) => {
+                    item.classList.toggle('highlighted', index === selectedIndex);
+                });
+            }
+            
+            function selectDestination(dest) {
+                input.value = dest;
+                input.dataset.selected = dest;
+                hideDropdown();
+            }
+        }
+        
+        function toggleBoxSize(size) {
+            const boxElement = document.querySelector(`[data-size="${size}"]`);
+            const isEnabled = ENABLED_BOX_SIZES.includes(size);
+            
+            if (isEnabled) {
+                ENABLED_BOX_SIZES = ENABLED_BOX_SIZES.filter(s => s !== size);
+                boxElement.classList.add('disabled');
+                boxElement.textContent = `${size} SCU ✗`;
+            } else {
+                ENABLED_BOX_SIZES.push(size);
+                ENABLED_BOX_SIZES.sort((a, b) => b - a);
+                boxElement.classList.remove('disabled');
+                boxElement.textContent = `${size} SCU ✓`;
+            }
+            
+            // Save configuration to localStorage
+            saveConfiguration();
+            
+            // Recalculate all resources when box sizes change
+            updateAllResourceOptimizations();
+        }
+        
+        function optimizeStorage(targetSCU) {
+            if (ENABLED_BOX_SIZES.length === 0) {
+                return null;
+            }
+            
+            const dp = new Array(targetSCU + 1).fill(null);
+            dp[0] = { boxes: {}, total: 0, efficiency: 100 };
+            
+            for (let i = 1; i <= targetSCU; i++) {
+                let bestSolution = null;
+                let minBoxes = Infinity;
+                
+                for (const boxSize of ENABLED_BOX_SIZES) {
+                    if (i >= boxSize && dp[i - boxSize] !== null) {
+                        const prevSolution = dp[i - boxSize];
+                        const newBoxCount = prevSolution.total + 1;
+                        
+                        if (newBoxCount < minBoxes) {
+                            minBoxes = newBoxCount;
+                            const newBoxes = { ...prevSolution.boxes };
+                            newBoxes[boxSize] = (newBoxes[boxSize] || 0) + 1;
+                            
+                            const maxBoxSize = Math.max(...ENABLED_BOX_SIZES);
+                            bestSolution = {
+                                boxes: newBoxes,
+                                total: newBoxCount,
+                                efficiency: (i / newBoxCount) * (100 / maxBoxSize)
+                            };
+                        }
+                    }
+                }
+                
+                dp[i] = bestSolution;
+            }
+            
+            return dp[targetSCU];
+        }
+        
+        function displayOptimizationResult(targetSCU, solution) {
+            if (!solution) {
+                return `<div class="result-item">
+                    <div class="result-header">
+                        ${targetSCU} SCU
+                        <span class="efficiency">Impossible</span>
+                    </div>
+                    <p>No valid combination found for ${targetSCU} SCU with current enabled box sizes</p>
+                </div>`;
+            }
+            
+            const boxBreakdown = Object.entries(solution.boxes)
+                .sort(([a], [b]) => parseInt(b) - parseInt(a))
+                .map(([size, count]) => 
+                    `<div class="box-size">
+                        <strong>${count}x</strong>
+                        ${size} SCU
+                    </div>`
+                ).join('');
+            
+            return `<div class="result-item">
+                <div class="result-header">
+                    ${targetSCU} SCU Storage
+                    <span class="efficiency">${solution.efficiency.toFixed(1)}% efficient</span>
+                </div>
+                <p><strong>Total Boxes:</strong> ${solution.total}</p>
+                <div class="box-breakdown">
+                    ${boxBreakdown}
+                </div>
+            </div>`;
+        }
+        
+        function optimizeSingle() {
+            const input = document.getElementById('scuInput');
+            const targetSCU = parseInt(input.value);
+            
+            if (!targetSCU || targetSCU < 1) {
+                alert('Please enter a valid SCU value (1 or greater)');
+                return;
+            }
+            
+            if (ENABLED_BOX_SIZES.length === 0) {
+                alert('Please enable at least one box size');
+                return;
+            }
+            
+            const solution = optimizeStorage(targetSCU);
+            const resultsDiv = document.getElementById('optimizerResults');
+            const contentDiv = document.getElementById('optimizerResultContent');
+            
+            contentDiv.innerHTML = displayOptimizationResult(targetSCU, solution);
+            resultsDiv.style.display = 'block';
+        }
+        
+        function optimizeBatch() {
+            const input = document.getElementById('batchInput');
+            const values = input.value.split(',').map(v => parseInt(v.trim())).filter(v => v > 0);
+            
+            if (values.length === 0) {
+                alert('Please enter valid SCU values separated by commas');
+                return;
+            }
+            
+            if (ENABLED_BOX_SIZES.length === 0) {
+                alert('Please enable at least one box size');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('optimizerResults');
+            const contentDiv = document.getElementById('optimizerResultContent');
+            
+            let html = '';
+            values.forEach(targetSCU => {
+                const solution = optimizeStorage(targetSCU);
+                html += displayOptimizationResult(targetSCU, solution);
+            });
+            
+            contentDiv.innerHTML = html;
+            resultsDiv.style.display = 'block';
+        }
+        
+        function addResource() {
+            const resourceSelect = document.getElementById('resourceSelect');
+            const destinationInput = document.getElementById('destinationInput');
+            const scuInput = document.getElementById('resourceSCU');
+            const preventDuplicates = document.getElementById('preventDuplicates');
+            
+            const resource = resourceSelect.value;
+            const destination = destinationInput.value;
+            const destinationFull = destinationInput.dataset.selected || destination;
+            const scu = parseInt(scuInput.value);
+            
+            if (!resource) {
+                alert('Please select a resource');
+                return;
+            }
+            
+            if (!destination) {
+                alert('Please select a destination');
+                return;
+            }
+            
+            if (!scu || scu < 1) {
+                alert('Please enter a valid SCU amount');
+                return;
+            }
+            
+            // Check for duplicates if prevention is enabled (same resource AND destination)
+            if (preventDuplicates.checked && resourceList.some(r => r.name === resource && r.destination === destination)) {
+                alert(`${resource} to ${destination} is already in your cargo list`);
+                return;
+            }
+            
+            const optimization = optimizeStorage(scu);
+            
+            const resourceItem = {
+                name: resource,
+                destination: destination,
+                scu: scu,
+                optimization: optimization,
+                id: Date.now()
+            };
+            
+            resourceList.push(resourceItem);
+            
+            // Clear inputs
+            resourceSelect.value = '';
+            destinationInput.value = '';
+            scuInput.value = '';
+            
+            updateResourceDisplay();
+            updateResourceSummary();
+        }
+        
+        function removeResource(id) {
+            resourceList = resourceList.filter(r => r.id !== id);
+            updateResourceDisplay();
+            updateResourceSummary();
+        }
+        
+        function clearAllResources() {
+            if (resourceList.length === 0) return;
+            
+            if (confirm('Are you sure you want to clear all resources?')) {
+                resourceList = [];
+                updateResourceDisplay();
+                updateResourceSummary();
+            }
+        }
+        
+        function updateAllResourceOptimizations() {
+            resourceList.forEach(resource => {
+                resource.optimization = optimizeStorage(resource.scu);
+            });
+            updateResourceDisplay();
+            updateResourceSummary();
+        }
+        
+        function updateResourceDisplay() {
+            const container = document.getElementById('resourceListContent');
+            
+            if (resourceList.length === 0) {
+                container.innerHTML = '<div class="empty-state">No resources added yet. Add some resources above to get started!</div>';
+                return;
+            }
+            
+            // Group resources by destination
+            const groupedResources = resourceList.reduce((groups, resource) => {
+                const destination = resource.destination;
+                if (!groups[destination]) {
+                    groups[destination] = [];
+                }
+                groups[destination].push(resource);
+                return groups;
+            }, {});
+            
+            // Sort destinations alphabetically
+            const sortedDestinations = Object.keys(groupedResources).sort();
+            
+            let html = '';
+            
+            sortedDestinations.forEach(destination => {
+                const resources = groupedResources[destination];
+                
+                // Calculate destination totals
+                const destTotalSCU = resources.reduce((sum, r) => sum + r.scu, 0);
+                const destTotalBoxes = resources.reduce((sum, r) => sum + (r.optimization ? r.optimization.total : 0), 0);
+                const validOptimizations = resources.filter(r => r.optimization);
+                const destAvgEfficiency = validOptimizations.length > 0 
+                    ? validOptimizations.reduce((sum, r) => sum + r.optimization.efficiency, 0) / validOptimizations.length
+                    : 0;
+                
+                html += `
+                    <div class="destination-group">
+                        <div class="destination-header">
+                            <h4>${destination}</h4>
+                            <div class="destination-stats">
+                                ${destTotalSCU} SCU • ${destTotalBoxes} boxes • ${destAvgEfficiency.toFixed(1)}% avg efficiency
+                            </div>
+                        </div>
+                `;
+                
+                resources.forEach(resource => {
+                    const optimization = resource.optimization;
+                    let optimizationHtml = '';
+                    
+                    if (optimization) {
+                        const boxBreakdown = Object.entries(optimization.boxes)
+                            .sort(([a], [b]) => parseInt(b) - parseInt(a))
+                            .map(([size, count]) => 
+                                `<div class="box-size">
+                                    <strong>${count}x</strong>
+                                    ${size} SCU
+                                </div>`
+                            ).join('');
+                        
+                        optimizationHtml = `
+                            <div class="box-breakdown">
+                                ${boxBreakdown}
+                            </div>
+                            <div style="margin-top: 10px;">
+                                <span class="efficiency">${optimization.efficiency.toFixed(1)}% efficient • ${optimization.total} boxes</span>
+                            </div>
+                        `;
+                    } else {
+                        optimizationHtml = '<div class="efficiency">No valid optimization found</div>';
+                    }
+                    
+                    html += `
+                        <div class="resource-item">
+                            <div class="resource-info">
+                                <div class="resource-name">${resource.name}</div>
+                                <div class="resource-scu">${resource.scu} SCU</div>
+                                ${optimizationHtml}
+                            </div>
+                            <div class="resource-actions">
+                                <button class="secondary small" onclick="removeResource(${resource.id})">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function updateResourceSummary() {
+            const summaryDiv = document.getElementById('resourcesSummary');
+            
+            if (resourceList.length === 0) {
+                summaryDiv.style.display = 'none';
+                return;
+            }
+            
+            summaryDiv.style.display = 'block';
+            
+            const totalResources = resourceList.length;
+            const totalSCU = resourceList.reduce((sum, r) => sum + r.scu, 0);
+            const totalBoxes = resourceList.reduce((sum, r) => {
+                return sum + (r.optimization ? r.optimization.total : 0);
+            }, 0);
+            
+            const validOptimizations = resourceList.filter(r => r.optimization);
+            const avgEfficiency = validOptimizations.length > 0 
+                ? validOptimizations.reduce((sum, r) => sum + r.optimization.efficiency, 0) / validOptimizations.length
+                : 0;
+            
+            document.getElementById('totalResources').textContent = totalResources;
+            document.getElementById('totalSCU').textContent = totalSCU;
+            document.getElementById('totalBoxes').textContent = totalBoxes;
+            document.getElementById('avgEfficiency').textContent = avgEfficiency.toFixed(1) + '%';
+        }
+        
+        // Allow Enter key to trigger optimization
+        document.getElementById('scuInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') optimizeSingle();
+        });
+        
+        document.getElementById('batchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') optimizeBatch();
+        });
+        
+        document.getElementById('resourceSCU').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') addResource();
+        });
+        
+        function setupDuplicatePrevention() {
+            const checkbox = document.getElementById('preventDuplicates');
+            const status = document.getElementById('duplicateStatus');
+            
+            // Set initial status
+            updateDuplicateStatus();
+            
+            // Listen for changes
+            checkbox.addEventListener('change', updateDuplicateStatus);
+            
+            function updateDuplicateStatus() {
+                if (checkbox.checked) {
+                    status.textContent = '✓ Active';
+                    status.className = 'duplicate-status active';
+                } else {
+                    status.textContent = '⚠ Inactive';
+                    status.className = 'duplicate-status inactive';
+                }
+            }
+        }
+        
+        function setupAutoSave() {
+            const autoSaveCheckbox = document.getElementById('autoSave');
+            
+            // Listen for changes to auto-save setting
+            autoSaveCheckbox.addEventListener('change', function() {
+                saveConfiguration();
+            });
+        }
+    </script>
+</body>
+</html>
