@@ -119,6 +119,20 @@ async function updateDestinationsJSONFull() {
     const planetMap = Object.fromEntries(planets.map((p) => [p.id, p.name]));
     const moonMap = Object.fromEntries(moons.map((m) => [m.id, m.name]));
     const stationMap = Object.fromEntries(stations.map((s) => [s.id, s.name]));
+
+    // First, add all available space stations to their respective regions
+    const stationRegions = {};
+    stations.forEach((station) => {
+      if (station.is_available_live === 1) {
+        const region =
+          station.orbit_name ||
+          `L${station.lagrange_point}` ||
+          "Other Stations";
+        if (!stationRegions[region]) stationRegions[region] = new Set();
+        stationRegions[region].add(station.name);
+      }
+    });
+
     // Fetch POIs for each planet
     for (const planet of planets) {
       try {
@@ -186,12 +200,7 @@ async function updateDestinationsJSONFull() {
     console.log(
       `System: ${system.name} - POIs with is_available_live === 1: ${filtered.length}`
     );
-    if (system.name.toLowerCase().includes("hurston")) {
-      console.log(
-        "Hurston POIs:",
-        filtered.map((poi) => poi.name)
-      );
-    }
+
     // Group by region (planet, moon, station, orbit)
     const regions = {};
     filtered.forEach((poi) => {
@@ -201,10 +210,23 @@ async function updateDestinationsJSONFull() {
         stationMap[poi.id_space_station] ||
         poi.orbit_name ||
         "Other";
-      if (!regions[region]) regions[region] = [];
-      regions[region].push(poi.name);
+      if (!regions[region]) regions[region] = new Set();
+      regions[region].add(poi.name);
     });
-    hierarchical[system.name] = regions;
+
+    // Merge in the station regions we collected earlier
+    for (const [region, stationNames] of Object.entries(stationRegions)) {
+      if (!regions[region]) regions[region] = new Set();
+      stationNames.forEach((name) => regions[region].add(name));
+    }
+
+    // Convert Sets to sorted arrays
+    hierarchical[system.name] = Object.fromEntries(
+      Object.entries(regions).map(([region, locations]) => [
+        region,
+        Array.from(locations).sort(),
+      ])
+    );
   }
   // Count total
   const total = Object.values(hierarchical).reduce(
