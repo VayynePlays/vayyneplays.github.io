@@ -12,6 +12,7 @@ const PLANETS_API_URL = "https://api.uexcorp.space/2.0/planets?id_star_system=";
 const MOONS_API_URL = "https://api.uexcorp.space/2.0/moons?id_star_system=";
 const SPACE_STATIONS_API_URL =
   "https://api.uexcorp.space/2.0/space_stations?id_star_system=";
+const CITIES_API_URL = "https://api.uexcorp.space/2.0/cities?id_star_system=";
 
 const OUTPOSTS_API_URL = "https://api.uexcorp.space/2.0/outposts";
 
@@ -108,12 +109,13 @@ async function updateDestinationsJSONFull() {
     console.log(`Processing system: ${system.name}`);
     let allPOIs = [];
     // Fetch planets, moons, stations
-    const [planets, moons, stations] = await Promise.all([
+    const [planets, moons, stations, cities] = await Promise.all([
       axios.get(PLANETS_API_URL + system.id).then((res) => res.data.data),
       axios.get(MOONS_API_URL + system.id).then((res) => res.data.data),
       axios
         .get(SPACE_STATIONS_API_URL + system.id)
         .then((res) => res.data.data),
+      axios.get(CITIES_API_URL + system.id).then((res) => res.data.data),
     ]);
     // Build lookup maps for this system
     const planetMap = Object.fromEntries(planets.map((p) => [p.id, p.name]));
@@ -212,6 +214,19 @@ async function updateDestinationsJSONFull() {
         "Other";
       if (!regions[region]) regions[region] = new Set();
       regions[region].add(poi.name);
+    });
+
+    // Add cities to their respective planets
+    cities.forEach((city) => {
+      if (city.is_available_live === 1 && city.id_planet) {
+        const planetName = planetMap[city.id_planet];
+        if (planetName) {
+          if (!regions[planetName]) {
+            regions[planetName] = new Set();
+          }
+          regions[planetName].add(city.name);
+        }
+      }
     });
 
     // Merge in the station regions we collected earlier
