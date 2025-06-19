@@ -70,6 +70,9 @@ To run this site locally:
 
 2. Open `index.html` in your browser or use a local server:
    ```bash
+   # Bunx
+   bunx serve # Will serve to localhost:3000
+
    # Using Python 3
    python -m http.server 8000
    

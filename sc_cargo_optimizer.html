@@ -560,6 +560,26 @@
             background: rgba(255, 193, 7, 0.1);
             color: #ffc107;
         }
+        
+        .dropdown-resource {
+            padding: 8px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.05);
+            transition: background-color 0.2s ease;
+        }
+        
+        .dropdown-resource:hover, .dropdown-resource.highlighted {
+            background: rgba(0, 212, 255, 0.2);
+        }
+        
+        .dropdown-resource:last-child {
+            border-bottom: none;
+        }
+        
+        .dropdown-resource-text {
+            color: #e0e6ed;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -576,10 +596,16 @@
         <div id="resources" class="tab-content active">
             <div class="section">
                 <div class="input-group">
-                    <label for="resourceSelect">Resource:</label>
-                    <select id="resourceSelect">
-                        <option value="">Select a resource...</option>
-                    </select>
+                    <label for="resourceSCU">SCU Amount:</label>
+                    <input type="number" id="resourceSCU" placeholder="Enter SCU amount" min="1">
+                </div>
+                
+                <div class="input-group">
+                    <label for="resourceInput">Resource:</label>
+                    <div class="typeahead-container">
+                        <input type="text" id="resourceInput" placeholder="Type resource name (e.g., Agricium, Titanium)..." autocomplete="off">
+                        <div id="resourceDropdown" class="dropdown-menu"></div>
+                    </div>
                 </div>
                 
                 <div class="input-group">
@@ -591,8 +617,6 @@
                 </div>
                 
                 <div class="input-group">
-                    <label for="resourceSCU">SCU Amount:</label>
-                    <input type="number" id="resourceSCU" placeholder="Enter SCU amount" min="1">
                     <button onclick="addResource()">Add Resource</button>
                 </div>
             </div>
@@ -752,99 +776,52 @@
         // Resource list
         let resourceList = [];
         
-        // Star Citizen destinations - Updated from UEXcorp (4.1.1 LIVE)
-        // Only includes locations with cargo elevators for delivery
-        const DESTINATIONS_HIERARCHICAL = {
-            'Stanton': {
-                'Major Landing Zones': [
-                    'Area18', 'Lorville', 'New Babbage', 'Orison'
-                ],
-                'Major Stations': [
-                    'Everus Harbor', 'Seraphim Station', 'Grim HEX', 'Baijini Point', 'Tressler'
-                ],
-                'Lagrange Points': [
-                    'CRU-L1 Ambitious Dream Station', 'CRU-L4 Shallow Fields Station', 'CRU-L5 Beautiful Glen Station',
-                    'HUR-L1 Green Imperial Housing Exchange', 'HUR-L2 Faithful Dream Station', 'HUR-L3 Thundering Express Station', 
-                    'HUR-L4 Melodic Fields Station', 'HUR-L5 Loving Passion Station',
-                    'ARC-L1 Wide Forest Station', 'ARC-L2 Sparkling Glen Station', 'ARC-L3 Silver Spirit Station', 
-                    'ARC-L4 Charming Desire Station', 'ARC-L5 Unconstrained Valor Station',
-                    'MIC-L1 Shallow Frontier Station', 'MIC-L2 Long Forest Station', 'MIC-L3 Endless Odyssey Station', 
-                    'MIC-L4 Bright Blossom Station', 'MIC-L5 Independent Scholastic Station'
-                ],
-                'ArcCorp Outposts': [
-                    'Humboldt Mines', 'Loveridge Mineral Reserve', 'Shubin Mining Facility SAL-2', 'Shubin Mining Facility SAL-5', 'The Orphanage',
-                    'ArcCorp Mining Area 045', 'ArcCorp Mining Area 048', 'ArcCorp Mining Area 056', 'ArcCorp Mining Area 061', 
-                    'Paradise Cove', 'Samson & Son\'s Salvage Center', 'Shady Glen'
-                ],
-                'Crusader Outposts': [
-                    'Gallete Family Farms', 'Hickes Research', 'Private Property', 'Terra Mills HydroFarm', 'Tram & Myers Mining',
-                    'ArcCorp Mining Area 141', 'Bountiful Harvest Hydroponics', 'Brio\'s Breaker Yard', 'Kudre Ore', 
-                    'Nuen Waste Management', 'Shubin Mining Facility SCD-1', 'Jumptown',
-                    'ArcCorp Mining Area 157', 'Benson Mining Outpost', 'Deakins Research', 'NT-999-XX', 'NT-999-XXII'
-                ],
-                'Hurston Outposts': [
-                    'HDMS-Anderson', 'HDMS-Bezdek', 'HDMS-Edmond', 'HDMS-Hadley', 'HDMS-Hahn', 'HDMS-Lathan', 
-                    'HDMS-Norgaard', 'HDMS-Oparei', 'HDMS-Perlman', 'HDMS-Pinewood', 'HDMS-Ryder', 'HDMS-Stanhope', 
-                    'HDMS-Thedus', 'HDMS-Woodruff', 'Reclamation & Disposal Orinth', 'Weeping Cove', 'Maker\'s Point', 
-                    'Rappel', 'Picker\'s Field', 'Zephyr', 'Cutter\'s Rig', 'Finn\'s Folly', 'Ludlow', 'Sakura Sun Magnolia Workcenter'
-                ],
-                'MicroTech Outposts': [
-                    'Outpost 54', 'Raven\'s Roost', 'Shubin Mining Facility SM0-10', 
-                    'Shubin Mining Facility SM0-13', 'Shubin Mining Facility SM0-18', 'Shubin Mining Facility SM0-22', 
-                    'The Necropolis', 'Astor\'s Clearing', 'Harper\'s Point', 'Dunboro', 'Bloodshot Ridge', 'Frostbite', 
-                    'Ghost Hollow', 'Moreland Hills', 'Razor\'s Edge', 'Shubin Mining Facility SMCa-6', 'Shubin Mining Facility SMCa-8', 
-                    'Bud\'s Growery', 'Devlin Scrap & Salvage'
-                ]
-            },
-            'Pyro': {
-                'Bloom Outposts': [
-                    'Bueno Ravine', 'Shadowfall', 'Shepherd\'s Rest', 'The Golden Riviera', 'The Yard', 'Carver\'s Ridge', 
-                    'Frigid Knot', 'Narena\'s Rest', 'Windfall', 'Prospect Depot'
-                ],
-                'Monox Outposts': [
-                    'Jackson\'s Swap', 'Last Ditch', 'Sunset Mesa', 'Yang\'s Place', 'Arid Reach', 'Ostler\'s Claim', 'Slowburn Depot'
-                ],
-                'Pyro I Outposts': [
-                    'Rustville', 'Stag\'s Rut', 'Gray Gardens Depot'
-                ],
-                'Pyro IV & V Outposts': [
-                    'Chawla\'s Beach', 'Fallow Field', 'Goner\'s Deal', 'Sacren\'s Plot', 'Dinger\'s Depot'
-                ],
-                'Other Pyro Outposts': [
-                    'Prophet\'s Peak', 'Feo Canyon Depot', 'Ashland', 'Kabir\'s Post', 'Seer\'s Canyon'
-                ],
-                'Terminus Outposts': [
-                    'Blackrock Exchange', 'Bullock\'s Reach', 'Canard View', 'Kinder Plots', 'Last Landings', 
-                    'Rough Landing', 'Scarper\'s Turn', 'Stonetree', 'Watcher\'s Depot'
-                ]
-            }
-        };
+        // Remove the hardcoded DESTINATIONS_HIERARCHICAL and DESTINATIONS_BASIC
+        let DESTINATIONS_HIERARCHICAL = {};
+        let DESTINATIONS_BASIC = [];
 
-        // Flatten destinations for search functionality
-        const DESTINATIONS_BASIC = [];
-        Object.entries(DESTINATIONS_HIERARCHICAL).forEach(([system, regions]) => {
-            Object.entries(regions).forEach(([region, locations]) => {
-                locations.forEach(location => {
-                    DESTINATIONS_BASIC.push(location);
+        // Load destinations from JSON file
+        fetch('destinations.json')
+            .then(response => response.json())
+            .then(data => {
+                DESTINATIONS_HIERARCHICAL = data.hierarchical;
+                // Flatten destinations for search functionality
+                DESTINATIONS_BASIC = [];
+                Object.entries(DESTINATIONS_HIERARCHICAL).forEach(([system, regions]) => {
+                    Object.entries(regions).forEach(([region, locations]) => {
+                        locations.forEach(location => {
+                            DESTINATIONS_BASIC.push(location);
+                        });
+                    });
                 });
+                DESTINATIONS_BASIC.sort();
+                // If you need to trigger any UI updates or initialization that depend on destinations, do it here
+            })
+            .catch(error => {
+                console.error('Failed to load destinations from JSON:', error);
+                // Fallback: leave DESTINATIONS_HIERARCHICAL and DESTINATIONS_BASIC empty
             });
-        });
-        DESTINATIONS_BASIC.sort();
         
-        // Star Citizen resources
-        const RESOURCES = [
-            'Agricium', 'Aluminum', 'Beryl', 'Borase', 'Chlorine', 'Copper', 'Corundum',
-            'Diamond', 'Fluorine', 'Gold', 'Hephaestanite', 'Hydrogen', 'Inert Materials',
-            'Iodine', 'Iron', 'Laranite', 'Quartz', 'Quantainium', 'Silicon', 'Taranite',
-            'Titanium', 'Tungsten', 'Waste', 'Medical Supplies', 'Food', 'Consumer Goods',
-            'Processed Food', 'Superconductors', 'WiDoW', 'SLAM', 'Maze', 'Neon', 'Etam',
-            'Scrap', 'Distilled Spirits', 'Stims', 'Astatine', 'Bexalite', 'Hadanite'
-        ].sort();
+        // Star Citizen resources - loaded from resources.json
+        let RESOURCES = [];
+        
+        // Load resources from JSON file
+        fetch('resources.json')
+            .then(response => response.json())
+            .then(data => {
+                RESOURCES = data.commodities.sort();
+                setupResourceTypeahead();
+            })
+            .catch(error => {
+                console.error('Failed to load resources from JSON:', error);
+                // Fallback to a basic list if JSON loading fails
+                RESOURCES = ['Agricium', 'Aluminum', 'Beryl', 'Copper', 'Gold', 'Iron', 'Titanium', 'Tungsten'];
+                setupResourceTypeahead();
+            });
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             loadConfiguration();
-            populateResourceSelect();
             setupTypeahead();
             setupDuplicatePrevention();
             setupAutoSave();
@@ -968,26 +945,16 @@
             event.target.classList.add('active');
         }
         
-        function populateResourceSelect() {
-            const select = document.getElementById('resourceSelect');
-            RESOURCES.forEach(resource => {
-                const option = document.createElement('option');
-                option.value = resource;
-                option.textContent = resource;
-                select.appendChild(option);
-            });
-        }
-        
-        function setupTypeahead() {
-            const input = document.getElementById('destinationInput');
-            const dropdown = document.getElementById('destinationDropdown');
+        function setupResourceTypeahead() {
+            const input = document.getElementById('resourceInput');
+            const dropdown = document.getElementById('resourceDropdown');
             let selectedIndex = -1;
             let selectableItems = [];
             
-            // Show full hierarchy when input is focused and empty
+            // Show all resources when input is focused and empty
             input.addEventListener('focus', function() {
                 if (this.value.length === 0) {
-                    showFullHierarchy();
+                    showAllResources();
                 }
             });
             
@@ -995,13 +962,15 @@
                 const query = this.value.toLowerCase();
                 
                 if (query.length === 0) {
-                    showFullHierarchy();
+                    showAllResources();
                     return;
                 }
                 
-                // Filter destinations based on query
-                const filteredResults = filterDestinations(query);
-                showFilteredResults(filteredResults);
+                // Filter resources based on query
+                const filteredResources = RESOURCES.filter(resource => 
+                    resource.toLowerCase().includes(query)
+                );
+                showFilteredResources(filteredResources);
                 selectedIndex = -1;
             });
             
@@ -1009,154 +978,80 @@
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
                     selectedIndex = Math.min(selectedIndex + 1, selectableItems.length - 1);
-                    highlightItem();
+                    highlightResourceItem();
                 } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
                     selectedIndex = Math.max(selectedIndex - 1, -1);
-                    highlightItem();
+                    highlightResourceItem();
                 } else if (e.key === 'Enter') {
                     e.preventDefault();
                     if (selectedIndex >= 0 && selectableItems[selectedIndex]) {
-                        selectDestination(selectableItems[selectedIndex]);
+                        selectResource(selectableItems[selectedIndex]);
                     }
                 } else if (e.key === 'Escape') {
-                    hideDropdown();
+                    hideResourceDropdown();
                 }
             });
             
             input.addEventListener('blur', function() {
                 // Delay hiding to allow click events
-                setTimeout(() => hideDropdown(), 150);
+                setTimeout(() => hideResourceDropdown(), 150);
             });
             
-            function showFullHierarchy() {
+            function showAllResources() {
                 dropdown.innerHTML = '';
                 selectableItems = [];
                 
-                Object.entries(DESTINATIONS_HIERARCHICAL).forEach(([system, regions]) => {
-                    const systemDiv = document.createElement('div');
-                    systemDiv.className = 'dropdown-system';
-                    
-                    const systemHeader = document.createElement('div');
-                    systemHeader.className = 'dropdown-system-header';
-                    systemHeader.textContent = system;
-                    systemDiv.appendChild(systemHeader);
-                    
-                    Object.entries(regions).forEach(([region, locations]) => {
-                        const regionDiv = document.createElement('div');
-                        regionDiv.className = 'dropdown-region';
-                        
-                        const regionHeader = document.createElement('div');
-                        regionHeader.className = 'dropdown-region-header';
-                        regionHeader.textContent = region;
-                        regionDiv.appendChild(regionHeader);
-                        
-                        locations.forEach(location => {
-                            const locationDiv = document.createElement('div');
-                            locationDiv.className = 'dropdown-location';
-                            locationDiv.innerHTML = `<div class="dropdown-location-text">${location}</div>`;
-                            locationDiv.addEventListener('click', () => selectDestination(location));
-                            regionDiv.appendChild(locationDiv);
-                            selectableItems.push(locationDiv);
-                        });
-                        
-                        systemDiv.appendChild(regionDiv);
-                    });
-                    
-                    dropdown.appendChild(systemDiv);
+                RESOURCES.forEach(resource => {
+                    const resourceDiv = document.createElement('div');
+                    resourceDiv.className = 'dropdown-resource';
+                    resourceDiv.innerHTML = `<div class="dropdown-resource-text">${resource}</div>`;
+                    resourceDiv.addEventListener('click', () => selectResource(resource));
+                    dropdown.appendChild(resourceDiv);
+                    selectableItems.push(resourceDiv);
                 });
                 
                 dropdown.style.display = 'block';
             }
             
-            function filterDestinations(query) {
-                const results = [];
-                
-                Object.entries(DESTINATIONS_HIERARCHICAL).forEach(([system, regions]) => {
-                    const systemResults = { system, regions: {} };
-                    let hasMatches = false;
-                    
-                    Object.entries(regions).forEach(([region, locations]) => {
-                        const matchingLocations = locations.filter(location => 
-                            location.toLowerCase().includes(query)
-                        );
-                        
-                        if (matchingLocations.length > 0) {
-                            systemResults.regions[region] = matchingLocations;
-                            hasMatches = true;
-                        }
-                    });
-                    
-                    if (hasMatches) {
-                        results.push(systemResults);
-                    }
-                });
-                
-                return results;
-            }
-            
-            function showFilteredResults(filteredResults) {
+            function showFilteredResources(filteredResources) {
                 dropdown.innerHTML = '';
                 selectableItems = [];
                 
-                if (filteredResults.length === 0) {
+                if (filteredResources.length === 0) {
                     const noResults = document.createElement('div');
                     noResults.className = 'dropdown-no-results';
-                    noResults.textContent = 'No matches found. Try a different search term or enter custom destination.';
+                    noResults.textContent = 'No resources found. Try a different search term.';
                     dropdown.appendChild(noResults);
                 } else {
-                    filteredResults.forEach(({ system, regions }) => {
-                        const systemDiv = document.createElement('div');
-                        systemDiv.className = 'dropdown-system';
-                        
-                        const systemHeader = document.createElement('div');
-                        systemHeader.className = 'dropdown-system-header';
-                        systemHeader.textContent = system;
-                        systemDiv.appendChild(systemHeader);
-                        
-                        Object.entries(regions).forEach(([region, locations]) => {
-                            const regionDiv = document.createElement('div');
-                            regionDiv.className = 'dropdown-region';
-                            
-                            const regionHeader = document.createElement('div');
-                            regionHeader.className = 'dropdown-region-header';
-                            regionHeader.textContent = region;
-                            regionDiv.appendChild(regionHeader);
-                            
-                            locations.forEach(location => {
-                                const locationDiv = document.createElement('div');
-                                locationDiv.className = 'dropdown-location';
-                                locationDiv.innerHTML = `<div class="dropdown-location-text">${location}</div>`;
-                                locationDiv.addEventListener('click', () => selectDestination(location));
-                                regionDiv.appendChild(locationDiv);
-                                selectableItems.push(locationDiv);
-                            });
-                            
-                            systemDiv.appendChild(regionDiv);
-                        });
-                        
-                        dropdown.appendChild(systemDiv);
+                    filteredResources.forEach(resource => {
+                        const resourceDiv = document.createElement('div');
+                        resourceDiv.className = 'dropdown-resource';
+                        resourceDiv.innerHTML = `<div class="dropdown-resource-text">${resource}</div>`;
+                        resourceDiv.addEventListener('click', () => selectResource(resource));
+                        dropdown.appendChild(resourceDiv);
+                        selectableItems.push(resourceDiv);
                     });
                 }
                 
                 dropdown.style.display = 'block';
             }
             
-            function hideDropdown() {
+            function hideResourceDropdown() {
                 dropdown.style.display = 'none';
                 selectedIndex = -1;
             }
             
-            function highlightItem() {
+            function highlightResourceItem() {
                 selectableItems.forEach((item, index) => {
                     item.classList.toggle('highlighted', index === selectedIndex);
                 });
             }
             
-            function selectDestination(dest) {
-                input.value = dest;
-                input.dataset.selected = dest;
-                hideDropdown();
+            function selectResource(resource) {
+                input.value = resource;
+                input.dataset.selected = resource;
+                hideResourceDropdown();
             }
         }
         
@@ -1302,12 +1197,12 @@
         }
         
         function addResource() {
-            const resourceSelect = document.getElementById('resourceSelect');
+            const resourceInput = document.getElementById('resourceInput');
             const destinationInput = document.getElementById('destinationInput');
             const scuInput = document.getElementById('resourceSCU');
             const preventDuplicates = document.getElementById('preventDuplicates');
             
-            const resource = resourceSelect.value;
+            const resource = resourceInput.value;
             const destination = destinationInput.value;
             const destinationFull = destinationInput.dataset.selected || destination;
             const scu = parseInt(scuInput.value);
@@ -1346,7 +1241,7 @@
             resourceList.push(resourceItem);
             
             // Clear inputs
-            resourceSelect.value = '';
+            resourceInput.value = '';
             destinationInput.value = '';
             scuInput.value = '';
             
@@ -1536,6 +1431,188 @@
             autoSaveCheckbox.addEventListener('change', function() {
                 saveConfiguration();
             });
+        }
+        
+        function setupTypeahead() {
+            const input = document.getElementById('destinationInput');
+            const dropdown = document.getElementById('destinationDropdown');
+            let selectedIndex = -1;
+            let selectableItems = [];
+            
+            // Show full hierarchy when input is focused and empty
+            input.addEventListener('focus', function() {
+                if (this.value.length === 0) {
+                    showFullHierarchy();
+                }
+            });
+            
+            input.addEventListener('input', function() {
+                const query = this.value.toLowerCase();
+                
+                if (query.length === 0) {
+                    showFullHierarchy();
+                    return;
+                }
+                
+                // Filter destinations based on query
+                const filteredResults = filterDestinations(query);
+                showFilteredResults(filteredResults);
+                selectedIndex = -1;
+            });
+            
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, selectableItems.length - 1);
+                    highlightItem();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, -1);
+                    highlightItem();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (selectedIndex >= 0 && selectableItems[selectedIndex]) {
+                        selectDestination(selectableItems[selectedIndex]);
+                    }
+                } else if (e.key === 'Escape') {
+                    hideDropdown();
+                }
+            });
+            
+            input.addEventListener('blur', function() {
+                // Delay hiding to allow click events
+                setTimeout(() => hideDropdown(), 150);
+            });
+            
+            function showFullHierarchy() {
+                dropdown.innerHTML = '';
+                selectableItems = [];
+                
+                Object.entries(DESTINATIONS_HIERARCHICAL).forEach(([system, regions]) => {
+                    const systemDiv = document.createElement('div');
+                    systemDiv.className = 'dropdown-system';
+                    
+                    const systemHeader = document.createElement('div');
+                    systemHeader.className = 'dropdown-system-header';
+                    systemHeader.textContent = system;
+                    systemDiv.appendChild(systemHeader);
+                    
+                    Object.entries(regions).forEach(([region, locations]) => {
+                        const regionDiv = document.createElement('div');
+                        regionDiv.className = 'dropdown-region';
+                        
+                        const regionHeader = document.createElement('div');
+                        regionHeader.className = 'dropdown-region-header';
+                        regionHeader.textContent = region;
+                        regionDiv.appendChild(regionHeader);
+                        
+                        locations.forEach(location => {
+                            const locationDiv = document.createElement('div');
+                            locationDiv.className = 'dropdown-location';
+                            locationDiv.innerHTML = `<div class="dropdown-location-text">${location}</div>`;
+                            locationDiv.addEventListener('click', () => selectDestination(location));
+                            regionDiv.appendChild(locationDiv);
+                            selectableItems.push(locationDiv);
+                        });
+                        
+                        systemDiv.appendChild(regionDiv);
+                    });
+                    
+                    dropdown.appendChild(systemDiv);
+                });
+                
+                dropdown.style.display = 'block';
+            }
+            
+            function filterDestinations(query) {
+                const results = [];
+                
+                Object.entries(DESTINATIONS_HIERARCHICAL).forEach(([system, regions]) => {
+                    const systemResults = { system, regions: {} };
+                    let hasMatches = false;
+                    
+                    Object.entries(regions).forEach(([region, locations]) => {
+                        const matchingLocations = locations.filter(location => 
+                            location.toLowerCase().includes(query)
+                        );
+                        
+                        if (matchingLocations.length > 0) {
+                            systemResults.regions[region] = matchingLocations;
+                            hasMatches = true;
+                        }
+                    });
+                    
+                    if (hasMatches) {
+                        results.push(systemResults);
+                    }
+                });
+                
+                return results;
+            }
+            
+            function showFilteredResults(filteredResults) {
+                dropdown.innerHTML = '';
+                selectableItems = [];
+                
+                if (filteredResults.length === 0) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'dropdown-no-results';
+                    noResults.textContent = 'No matches found. Try a different search term or enter custom destination.';
+                    dropdown.appendChild(noResults);
+                } else {
+                    filteredResults.forEach(({ system, regions }) => {
+                        const systemDiv = document.createElement('div');
+                        systemDiv.className = 'dropdown-system';
+                        
+                        const systemHeader = document.createElement('div');
+                        systemHeader.className = 'dropdown-system-header';
+                        systemHeader.textContent = system;
+                        systemDiv.appendChild(systemHeader);
+                        
+                        Object.entries(regions).forEach(([region, locations]) => {
+                            const regionDiv = document.createElement('div');
+                            regionDiv.className = 'dropdown-region';
+                            
+                            const regionHeader = document.createElement('div');
+                            regionHeader.className = 'dropdown-region-header';
+                            regionHeader.textContent = region;
+                            regionDiv.appendChild(regionHeader);
+                            
+                            locations.forEach(location => {
+                                const locationDiv = document.createElement('div');
+                                locationDiv.className = 'dropdown-location';
+                                locationDiv.innerHTML = `<div class="dropdown-location-text">${location}</div>`;
+                                locationDiv.addEventListener('click', () => selectDestination(location));
+                                regionDiv.appendChild(locationDiv);
+                                selectableItems.push(locationDiv);
+                            });
+                            
+                            systemDiv.appendChild(regionDiv);
+                        });
+                        
+                        dropdown.appendChild(systemDiv);
+                    });
+                }
+                
+                dropdown.style.display = 'block';
+            }
+            
+            function hideDropdown() {
+                dropdown.style.display = 'none';
+                selectedIndex = -1;
+            }
+            
+            function highlightItem() {
+                selectableItems.forEach((item, index) => {
+                    item.classList.toggle('highlighted', index === selectedIndex);
+                });
+            }
+            
+            function selectDestination(dest) {
+                input.value = dest;
+                input.dataset.selected = dest;
+                hideDropdown();
+            }
         }
     </script>
 </body>

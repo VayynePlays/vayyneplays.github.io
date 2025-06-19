@@ -1,0 +1,174 @@
+{
+  "last_updated": "2025-06-19T00:23:28.712Z",
+  "total_destinations": 138,
+  "hierarchical": {
+    "Stanton": {
+      "Major Landing Zones": [
+        "Area18",
+        "Lorville",
+        "New Babbage",
+        "Orison"
+      ],
+      "Major Stations": [
+        "Everus Harbor",
+        "Seraphim Station",
+        "Grim HEX",
+        "Baijini Point",
+        "Tressler"
+      ],
+      "Lagrange Points": [
+        "CRU-L1 Ambitious Dream Station",
+        "CRU-L4 Shallow Fields Station",
+        "CRU-L5 Beautiful Glen Station",
+        "HUR-L1 Green Imperial Housing Exchange",
+        "HUR-L2 Faithful Dream Station",
+        "HUR-L3 Thundering Express Station",
+        "HUR-L4 Melodic Fields Station",
+        "HUR-L5 Loving Passion Station",
+        "ARC-L1 Wide Forest Station",
+        "ARC-L2 Sparkling Glen Station",
+        "ARC-L3 Silver Spirit Station",
+        "ARC-L4 Charming Desire Station",
+        "ARC-L5 Unconstrained Valor Station",
+        "MIC-L1 Shallow Frontier Station",
+        "MIC-L2 Long Forest Station",
+        "MIC-L3 Endless Odyssey Station",
+        "MIC-L4 Bright Blossom Station",
+        "MIC-L5 Independent Scholastic Station"
+      ],
+      "ArcCorp Outposts": [
+        "Humboldt Mines",
+        "Loveridge Mineral Reserve",
+        "Shubin Mining Facility SAL-2",
+        "Shubin Mining Facility SAL-5",
+        "The Orphanage",
+        "ArcCorp Mining Area 045",
+        "ArcCorp Mining Area 048",
+        "ArcCorp Mining Area 056",
+        "ArcCorp Mining Area 061",
+        "Paradise Cove",
+        "Samson & Son's Salvage Center",
+        "Shady Glen"
+      ],
+      "Crusader Outposts": [
+        "Gallete Family Farms",
+        "Hickes Research",
+        "Private Property",
+        "Terra Mills HydroFarm",
+        "Tram & Myers Mining",
+        "ArcCorp Mining Area 141",
+        "Bountiful Harvest Hydroponics",
+        "Brio's Breaker Yard",
+        "Kudre Ore",
+        "Nuen Waste Management",
+        "Shubin Mining Facility SCD-1",
+        "Jumptown",
+        "ArcCorp Mining Area 157",
+        "Benson Mining Outpost",
+        "Deakins Research",
+        "NT-999-XX",
+        "NT-999-XXII"
+      ],
+      "Hurston Outposts": [
+        "HDMS-Anderson",
+        "HDMS-Bezdek",
+        "HDMS-Edmond",
+        "HDMS-Hadley",
+        "HDMS-Hahn",
+        "HDMS-Lathan",
+        "HDMS-Norgaard",
+        "HDMS-Oparei",
+        "HDMS-Perlman",
+        "HDMS-Pinewood",
+        "HDMS-Ryder",
+        "HDMS-Stanhope",
+        "HDMS-Thedus",
+        "HDMS-Woodruff",
+        "Reclamation & Disposal Orinth",
+        "Weeping Cove",
+        "Maker's Point",
+        "Rappel",
+        "Picker's Field",
+        "Zephyr",
+        "Cutter's Rig",
+        "Finn's Folly",
+        "Ludlow",
+        "Sakura Sun Magnolia Workcenter"
+      ],
+      "MicroTech Outposts": [
+        "Outpost 54",
+        "Raven's Roost",
+        "Shubin Mining Facility SM0-10",
+        "Shubin Mining Facility SM0-13",
+        "Shubin Mining Facility SM0-18",
+        "Shubin Mining Facility SM0-22",
+        "The Necropolis",
+        "Astor's Clearing",
+        "Harper's Point",
+        "Dunboro",
+        "Bloodshot Ridge",
+        "Frostbite",
+        "Ghost Hollow",
+        "Moreland Hills",
+        "Razor's Edge",
+        "Shubin Mining Facility SMCa-6",
+        "Shubin Mining Facility SMCa-8",
+        "Bud's Growery",
+        "Devlin Scrap & Salvage"
+      ]
+    },
+    "Pyro": {
+      "Bloom Outposts": [
+        "Bueno Ravine",
+        "Shadowfall",
+        "Shepherd's Rest",
+        "The Golden Riviera",
+        "The Yard",
+        "Carver's Ridge",
+        "Frigid Knot",
+        "Narena's Rest",
+        "Windfall",
+        "Prospect Depot"
+      ],
+      "Monox Outposts": [
+        "Jackson's Swap",
+        "Last Ditch",
+        "Sunset Mesa",
+        "Yang's Place",
+        "Arid Reach",
+        "Ostler's Claim",
+        "Slowburn Depot"
+      ],
+      "Pyro I Outposts": [
+        "Rustville",
+        "Stag's Rut",
+        "Gray Gardens Depot"
+      ],
+      "Pyro IV & V Outposts": [
+        "Chawla's Beach",
+        "Fallow Field",
+        "Goner's Deal",
+        "Sacren's Plot",
+        "Dinger's Depot"
+      ],
+      "Other Pyro Outposts": [
+        "Prophet's Peak",
+        "Feo Canyon Depot",
+        "Ashland",
+        "Kabir's Post",
+        "Seer's Canyon"
+      ],
+      "Terminus Outposts": [
+        "Blackrock Exchange",
+        "Bullock's Reach",
+        "Canard View",
+        "Kinder Plots",
+        "Last Landings",
+        "Rough Landing",
+        "Scarper's Turn",
+        "Stonetree",
+        "Watcher's Depot"
+      ]
+    }
+  }
+}

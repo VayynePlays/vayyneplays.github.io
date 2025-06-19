@@ -52,4 +52,7 @@ node_modules/
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp
+
+# Timestamped commodity data files
+commodities_*.json 
