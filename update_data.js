@@ -1,8 +1,19 @@
 const https = require("https");
 const fs = require("fs");
+const axios = require("axios");
 
 // UEX API endpoint for commodities
 const COMMODITIES_API_URL = "https://api.uexcorp.space/2.0/commodities";
+
+// UEX API endpoints
+const STAR_SYSTEMS_API_URL = "https://api.uexcorp.space/2.0/star_systems";
+const POI_API_URL = "https://api.uexcorp.space/2.0/poi";
+const PLANETS_API_URL = "https://api.uexcorp.space/2.0/planets?id_star_system=";
+const MOONS_API_URL = "https://api.uexcorp.space/2.0/moons?id_star_system=";
+const SPACE_STATIONS_API_URL =
+  "https://api.uexcorp.space/2.0/space_stations?id_star_system=";
+
+const OUTPOSTS_API_URL = "https://api.uexcorp.space/2.0/outposts";
 
 // Function to fetch data from UEX API
 function fetchCommodities() {
@@ -66,34 +77,155 @@ function updateCommoditiesJSON(commodities) {
   }
 }
 
-// Function to update the destinations JSON file
-function updateDestinationsJSON() {
-  const jsonFile = "destinations.json";
+// Helper to fetch POIs for a given query param
+async function fetchPOIs(params) {
+  const url = `${POI_API_URL}?${params}`;
+  const res = await axios.get(url);
+  if (res.data.status !== "ok")
+    throw new Error("Failed to fetch POIs for " + params);
+  return res.data.data;
+}
 
-  try {
-    // Read the current destinations file
-    const currentData = JSON.parse(fs.readFileSync(jsonFile, "utf8"));
+// Main update function for destinations
+async function updateDestinationsJSONFull() {
+  // Fetch all star systems
+  const starSystems = await axios
+    .get(STAR_SYSTEMS_API_URL)
+    .then((res) => res.data.data);
+  // Fetch all outposts once
+  const outposts = await axios
+    .get(OUTPOSTS_API_URL)
+    .then((res) => res.data.data);
 
-    // Update the timestamp
-    currentData.last_updated = new Date().toISOString();
+  // Build system id to name map
+  const systemMap = Object.fromEntries(starSystems.map((s) => [s.id, s.name]));
 
-    // Recalculate total destinations
-    let total = 0;
-    Object.values(currentData.hierarchical).forEach((system) => {
-      Object.values(system).forEach((region) => {
-        total += region.length;
-      });
-    });
-    currentData.total_destinations = total;
-
-    // Write the updated content back to the JSON file
-    fs.writeFileSync(jsonFile, JSON.stringify(currentData, null, 2), "utf8");
-    console.log(
-      `✅ Successfully updated ${jsonFile} with ${total} destinations`
+  // For each system, fetch planets, moons, space stations, and all POIs
+  const hierarchical = {};
+  for (const system of starSystems) {
+    // Only process Stanton and Pyro
+    if (system.name !== "Stanton" && system.name !== "Pyro") continue;
+    console.log(`Processing system: ${system.name}`);
+    let allPOIs = [];
+    // Fetch planets, moons, stations
+    const [planets, moons, stations] = await Promise.all([
+      axios.get(PLANETS_API_URL + system.id).then((res) => res.data.data),
+      axios.get(MOONS_API_URL + system.id).then((res) => res.data.data),
+      axios
+        .get(SPACE_STATIONS_API_URL + system.id)
+        .then((res) => res.data.data),
+    ]);
+    // Build lookup maps for this system
+    const planetMap = Object.fromEntries(planets.map((p) => [p.id, p.name]));
+    const moonMap = Object.fromEntries(moons.map((m) => [m.id, m.name]));
+    const stationMap = Object.fromEntries(stations.map((s) => [s.id, s.name]));
+    // Fetch POIs for each planet
+    for (const planet of planets) {
+      try {
+        const pois = await fetchPOIs(`id_planet=${planet.id}`);
+        allPOIs = allPOIs.concat(pois);
+      } catch (err) {
+        console.error(
+          `Error fetching POIs for planet ${planet.name}:`,
+          err.message
+        );
+      }
+    }
+    // Fetch POIs for each moon
+    for (const moon of moons) {
+      try {
+        const pois = await fetchPOIs(`id_moon=${moon.id}`);
+        allPOIs = allPOIs.concat(pois);
+      } catch (err) {
+        console.error(
+          `Error fetching POIs for moon ${moon.name}:`,
+          err.message
+        );
+      }
+    }
+    // Fetch POIs for each space station
+    for (const station of stations) {
+      try {
+        const pois = await fetchPOIs(`id_space_station=${station.id}`);
+        allPOIs = allPOIs.concat(pois);
+      } catch (err) {
+        console.error(
+          `Error fetching POIs for space station ${station.name}:`,
+          err.message
+        );
+      }
+    }
+    // Fetch system-level POIs
+    try {
+      const pois = await fetchPOIs(`id_star_system=${system.id}`);
+      allPOIs = allPOIs.concat(pois);
+    } catch (err) {
+      console.error(
+        `Error fetching POIs for system ${system.name}:`,
+        err.message
+      );
+    }
+    // Add outposts for this system
+    const systemOutposts = outposts.filter(
+      (o) => o.is_available_live === 1 && o.star_system_name === system.name
     );
-  } catch (error) {
-    console.error("❌ Error updating destinations JSON file:", error.message);
+    allPOIs = allPOIs.concat(systemOutposts);
+    // Remove duplicates by POI name
+    const seen = new Set();
+    allPOIs = allPOIs.filter((poi) => {
+      const key = poi.name;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    // Debug: log POI counts
+    console.log(
+      `System: ${system.name} - Total POIs before filtering: ${allPOIs.length}`
+    );
+    const filtered = allPOIs.filter((poi) => poi.is_available_live === 1);
+    console.log(
+      `System: ${system.name} - POIs with is_available_live === 1: ${filtered.length}`
+    );
+    if (system.name.toLowerCase().includes("hurston")) {
+      console.log(
+        "Hurston POIs:",
+        filtered.map((poi) => poi.name)
+      );
+    }
+    // Group by region (planet, moon, station, orbit)
+    const regions = {};
+    filtered.forEach((poi) => {
+      const region =
+        planetMap[poi.id_planet] ||
+        moonMap[poi.id_moon] ||
+        stationMap[poi.id_space_station] ||
+        poi.orbit_name ||
+        "Other";
+      if (!regions[region]) regions[region] = [];
+      regions[region].push(poi.name);
+    });
+    hierarchical[system.name] = regions;
   }
+  // Count total
+  const total = Object.values(hierarchical).reduce(
+    (sum, sys) =>
+      sum + Object.values(sys).reduce((s, reg) => s + reg.length, 0),
+    0
+  );
+  // Write destinations.json
+  const newData = {
+    last_updated: new Date().toISOString(),
+    total_destinations: total,
+    hierarchical,
+  };
+  fs.writeFileSync(
+    "destinations.json",
+    JSON.stringify(newData, null, 2),
+    "utf8"
+  );
+  console.log(
+    `✅ Successfully updated destinations.json with ${total} destinations`
+  );
 }
 
 // Function to save commodities to a detailed JSON file for reference
@@ -118,6 +250,59 @@ function saveCommoditiesToJSON(commodities, allCommodities) {
 
   fs.writeFileSync(filename, JSON.stringify(data, null, 2), "utf8");
   console.log(`📄 Saved detailed commodity data to ${filename}`);
+}
+
+// Fetch all lookup tables and outposts
+async function fetchAllLookupsAndOutposts() {
+  const [outposts, starSystems, planets, moons, spaceStations] =
+    await Promise.all([
+      axios.get(OUTPOSTS_API_URL).then((res) => res.data.data),
+      axios.get(STAR_SYSTEMS_API_URL).then((res) => res.data.data),
+      axios.get(PLANETS_API_URL).then((res) => res.data.data),
+      axios.get(MOONS_API_URL).then((res) => res.data.data),
+      axios.get(SPACE_STATIONS_API_URL).then((res) => res.data.data),
+    ]);
+  return { outposts, starSystems, planets, moons, spaceStations };
+}
+
+// Build ID-to-name maps
+function buildIdMaps(starSystems, planets, moons, spaceStations) {
+  return {
+    systemMap: Object.fromEntries(starSystems.map((s) => [s.id, s.name])),
+    planetMap: Object.fromEntries(planets.map((p) => [p.id, p.name])),
+    moonMap: Object.fromEntries(moons.map((m) => [m.id, m.name])),
+    stationMap: Object.fromEntries(spaceStations.map((s) => [s.id, s.name])),
+  };
+}
+
+// Group outposts by system and region using names
+function groupOutpostsBySystemAndRegion(
+  outposts,
+  systemMap,
+  planetMap,
+  moonMap,
+  stationMap
+) {
+  const hierarchical = {};
+  outposts.forEach((outpost) => {
+    if (
+      outpost.is_available_live !== 1 ||
+      outpost.is_visible !== 1 ||
+      outpost.has_freight_elevator !== 1
+    )
+      return;
+    const system = systemMap[outpost.id_star_system] || "Unknown System";
+    const region =
+      planetMap[outpost.id_planet] ||
+      moonMap[outpost.id_moon] ||
+      stationMap[outpost.id_space_station] ||
+      outpost.orbit_name ||
+      "Other";
+    if (!hierarchical[system]) hierarchical[system] = {};
+    if (!hierarchical[system][region]) hierarchical[system][region] = [];
+    hierarchical[system][region].push(outpost.name);
+  });
+  return hierarchical;
 }
 
 // Main function
@@ -161,8 +346,8 @@ async function updateData() {
     }
 
     // Update destinations
-    console.log("\n🌍 Updating destinations...");
-    updateDestinationsJSON();
+    console.log("\n🌍 Fetching full destinations list from UEX...");
+    await updateDestinationsJSONFull();
 
     console.log("\n🎉 Data update completed successfully!");
     console.log("📁 Updated files:");
@@ -184,5 +369,5 @@ module.exports = {
   fetchCommodities,
   filterCommodities,
   updateCommoditiesJSON,
-  updateDestinationsJSON,
+  updateDestinationsJSONFull,
 };

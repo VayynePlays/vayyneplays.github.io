@@ -752,6 +752,12 @@
                     </ul>
                 </div>
             </div>
+            
+            <div class="section">
+                <h3>📝 Manage Custom Destinations</h3>
+                <div id="customDestinationsList"></div>
+                <div style="margin-top:10px;color:#999;font-size:0.9em;">Custom destinations are only stored in your browser and are not shared or synced.</div>
+            </div>
         </div>
     </div>
 
@@ -776,9 +782,9 @@
         // Resource list
         let resourceList = [];
         
-        // Remove the hardcoded DESTINATIONS_HIERARCHICAL and DESTINATIONS_BASIC
-        let DESTINATIONS_HIERARCHICAL = {};
-        let DESTINATIONS_BASIC = [];
+        // Custom Destinations logic
+        const CUSTOM_DESTINATIONS_KEY = 'sc_haulmaster_custom_destinations';
+        let CUSTOM_DESTINATIONS = [];
 
         // Load destinations from JSON file
         fetch('destinations.json')
@@ -826,6 +832,8 @@
             setupDuplicatePrevention();
             setupAutoSave();
             updateBoxSizeDisplay();
+            loadCustomDestinations();
+            updateCustomDestinationsUI();
         });
         
         function loadConfiguration() {
@@ -1227,7 +1235,26 @@
                 alert(`${resource} to ${destination} is already in your cargo list`);
                 return;
             }
-            
+
+            // Check if destination is not in any known list, and add as custom if needed
+            let isKnown = false;
+            if (typeof DESTINATIONS_BASIC !== 'undefined' && DESTINATIONS_BASIC.includes(destination)) {
+                isKnown = true;
+            } else if (typeof DESTINATIONS_HIERARCHICAL !== 'undefined') {
+                // Check all locations in hierarchical
+                outer: for (const sys of Object.values(DESTINATIONS_HIERARCHICAL)) {
+                    for (const reg of Object.values(sys)) {
+                        if (reg.includes && reg.includes(destination)) {
+                            isKnown = true;
+                            break outer;
+                        }
+                    }
+                }
+            }
+            if (!isKnown && typeof CUSTOM_DESTINATIONS !== 'undefined' && !CUSTOM_DESTINATIONS.includes(destination)) {
+                addCustomDestination(destination);
+            }
+
             const optimization = optimizeStorage(scu);
             
             const resourceItem = {
@@ -1613,6 +1640,53 @@
                 input.dataset.selected = dest;
                 hideDropdown();
             }
+        }
+        
+        function loadCustomDestinations() {
+            const saved = localStorage.getItem(CUSTOM_DESTINATIONS_KEY);
+            if (saved) {
+                try {
+                    CUSTOM_DESTINATIONS = JSON.parse(saved);
+                } catch (e) {
+                    CUSTOM_DESTINATIONS = [];
+                }
+            } else {
+                CUSTOM_DESTINATIONS = [];
+            }
+        }
+        
+        function saveCustomDestinations() {
+            localStorage.setItem(CUSTOM_DESTINATIONS_KEY, JSON.stringify(CUSTOM_DESTINATIONS));
+        }
+        
+        function addCustomDestination(name) {
+            if (!CUSTOM_DESTINATIONS.includes(name)) {
+                CUSTOM_DESTINATIONS.push(name);
+                saveCustomDestinations();
+                updateCustomDestinationsUI();
+            }
+        }
+        
+        function removeCustomDestination(name) {
+            CUSTOM_DESTINATIONS = CUSTOM_DESTINATIONS.filter(dest => dest !== name);
+            saveCustomDestinations();
+            updateCustomDestinationsUI();
+        }
+        
+        function updateCustomDestinationsUI() {
+            // Management UI in config tab
+            const container = document.getElementById('customDestinationsList');
+            if (!container) return;
+            if (CUSTOM_DESTINATIONS.length === 0) {
+                container.innerHTML = '<div style="color:#999;">No custom destinations added.</div>';
+                return;
+            }
+            container.innerHTML = CUSTOM_DESTINATIONS.map(dest =>
+                `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                    <span style="flex:1;">${dest}</span>
+                    <button class="secondary small" onclick="removeCustomDestination('${dest.replace(/'/g, "\\'")}')">Remove</button>
+                </div>`
+            ).join('');
         }
     </script>
 </body>
