@@ -1,6 +1,12 @@
 {
   "last_updated": "2025-06-19T23:11:50.055Z",
   "total_destinations": 331,
+  "aliases": {
+    "Rayari": ["Hickes Research", "Deakins Research"],
+    "Rayari Inc": ["Hickes Research", "Deakins Research"],
+    "Rayari, Inc": ["Hickes Research", "Deakins Research"],
+    "Rayari, Inc.": ["Hickes Research", "Deakins Research"]
+  },
   "hierarchical": {
     "Pyro": {
       "Pyro I": ["Gray Gardens Depot", "Rustville", "Stag's Rut"],

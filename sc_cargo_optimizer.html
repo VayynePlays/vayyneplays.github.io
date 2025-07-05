@@ -625,6 +625,18 @@
             font-size: 0.9em;
             text-align: right;
         }
+        
+        .route-step.new-planet {
+            border-left: 4px solid #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+        
+        .planet-indicator {
+            color: #ff6b6b;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -729,14 +741,14 @@
             
             <div class="info-box">
                 <h3>📦 How to Use This Tool</h3>
-                <p><strong>Perfect for organizing multiple delivery contracts with route optimization!</strong> When you have several contracts and want to minimize backtracking:</p>
+                <p><strong>Perfect for organizing multiple delivery contracts with planet-based route optimization!</strong> When you have several contracts and want to minimize interplanetary travel:</p>
                 <ol style="margin: 10px 0; padding-left: 20px;">
                     <li><strong>Add Your Contracts:</strong> For each contract, specify the source, destination, resource, and SCU amount</li>
-                    <li><strong>Review the Route:</strong> The tool automatically optimizes your route to minimize backtracking</li>
+                    <li><strong>Review the Route:</strong> The tool automatically groups all deliveries to each planet together</li>
                     <li><strong>Check Cargo Flow:</strong> See exactly what cargo you'll be carrying at each step</li>
                     <li><strong>Organize Your Grid:</strong> Use the box breakdown to prepare cargo for each contract</li>
                 </ol>
-                <p><strong>Pro Tip:</strong> The route optimization prioritizes locations that are both sources and destinations to minimize empty cargo space!</p>
+                <p><strong>Pro Tip:</strong> The route optimization groups all locations on the same planet together to minimize interplanetary travel costs! Red borders indicate planet changes.</p>
             </div>
         </div>
         
@@ -844,6 +856,7 @@
             .then(response => response.json())
             .then(data => {
                 DESTINATIONS_HIERARCHICAL = data.hierarchical;
+                DESTINATIONS_ALIASES = data.aliases || {};
                 // Flatten destinations for search functionality
                 DESTINATIONS_BASIC = [];
                 Object.entries(DESTINATIONS_HIERARCHICAL).forEach(([system, regions]) => {
@@ -859,10 +872,16 @@
             .catch(error => {
                 console.error('Failed to load destinations from JSON:', error);
                 // Fallback: leave DESTINATIONS_HIERARCHICAL and DESTINATIONS_BASIC empty
+                DESTINATIONS_ALIASES = {};
             });
         
         // Star Citizen resources - loaded from resources.json
         let RESOURCES = [];
+        
+        // Global variables for destinations
+        let DESTINATIONS_HIERARCHICAL = {};
+        let DESTINATIONS_BASIC = [];
+        let DESTINATIONS_ALIASES = {};
         
         // Load resources from JSON file
         fetch('resources.json')
@@ -1414,55 +1433,69 @@
         function optimizeRoute() {
             if (contractList.length === 0) return [];
             
-            // Create a map of all unique locations
-            const locations = new Set();
-            contractList.forEach(contract => {
-                locations.add(contract.fullSource);
-                locations.add(contract.fullDestination);
-            });
+            // Extract planet/moon from location names
+            function getPlanet(location) {
+                const match = location.match(/\(([^)]+)\)$/);
+                return match ? match[1] : 'Unknown';
+            }
             
-            // Create a graph of connections
-            const connections = {};
+            // Group all locations by planet
+            const planetGroups = {};
             contractList.forEach(contract => {
-                if (!connections[contract.fullSource]) connections[contract.fullSource] = [];
-                if (!connections[contract.fullDestination]) connections[contract.fullDestination] = [];
+                const sourcePlanet = getPlanet(contract.fullSource);
+                const destPlanet = getPlanet(contract.fullDestination);
                 
-                connections[contract.fullSource].push({
-                    to: contract.fullDestination,
-                    resource: contract.resource,
-                    scu: contract.scu,
-                    contractId: contract.id
-                });
+                if (!planetGroups[sourcePlanet]) planetGroups[sourcePlanet] = [];
+                if (!planetGroups[destPlanet]) planetGroups[destPlanet] = [];
+                
+                if (!planetGroups[sourcePlanet].includes(contract.fullSource)) {
+                    planetGroups[sourcePlanet].push(contract.fullSource);
+                }
+                if (!planetGroups[destPlanet].includes(contract.fullDestination)) {
+                    planetGroups[destPlanet].push(contract.fullDestination);
+                }
             });
             
-            // Find transfer points (locations that are both sources and destinations)
-            const transferPoints = [];
-            locations.forEach(location => {
-                const isSource = contractList.some(c => c.fullSource === location);
-                const isDestination = contractList.some(c => c.fullDestination === location);
+            // Find planets that are both sources and destinations (transfer planets)
+            const transferPlanets = [];
+            Object.keys(planetGroups).forEach(planet => {
+                const isSource = contractList.some(c => getPlanet(c.fullSource) === planet);
+                const isDestination = contractList.some(c => getPlanet(c.fullDestination) === planet);
                 if (isSource && isDestination) {
-                    transferPoints.push(location);
+                    transferPlanets.push(planet);
                 }
             });
             
-            // Simple route optimization: prioritize transfer points
+            // Create optimized route by planet
             const route = [];
-            const visited = new Set();
-            const pendingContracts = [...contractList];
+            const visitedPlanets = new Set();
+            const visitedLocations = new Set();
             
-            // Start with transfer points first
-            transferPoints.forEach(point => {
-                if (!visited.has(point)) {
-                    route.push(point);
-                    visited.add(point);
+            // Start with transfer planets first (they're most valuable to visit early)
+            transferPlanets.forEach(planet => {
+                if (!visitedPlanets.has(planet)) {
+                    // Add all locations on this planet
+                    planetGroups[planet].forEach(location => {
+                        if (!visitedLocations.has(location)) {
+                            route.push(location);
+                            visitedLocations.add(location);
+                        }
+                    });
+                    visitedPlanets.add(planet);
                 }
             });
             
-            // Add remaining locations
-            locations.forEach(location => {
-                if (!visited.has(location)) {
-                    route.push(location);
-                    visited.add(location);
+            // Add remaining planets
+            Object.keys(planetGroups).forEach(planet => {
+                if (!visitedPlanets.has(planet)) {
+                    // Add all locations on this planet
+                    planetGroups[planet].forEach(location => {
+                        if (!visitedLocations.has(location)) {
+                            route.push(location);
+                            visitedLocations.add(location);
+                        }
+                    });
+                    visitedPlanets.add(planet);
                 }
             });
             
@@ -1472,6 +1505,12 @@
         function calculateCargoAtLocation(location, routeIndex) {
             const cargo = {};
             
+            // Extract planet from location
+            function getPlanet(loc) {
+                const match = loc.match(/\(([^)]+)\)$/);
+                return match ? match[1] : 'Unknown';
+            }
+            
             // Calculate what cargo should be at this location based on the route
             contractList.forEach(contract => {
                 const sourceIndex = routeIndex.findIndex(route => route === contract.fullSource);
@@ -1479,6 +1518,9 @@
                 
                 if (sourceIndex !== -1 && destIndex !== -1) {
                     const currentIndex = routeIndex.indexOf(location);
+                    const currentPlanet = getPlanet(location);
+                    const sourcePlanet = getPlanet(contract.fullSource);
+                    const destPlanet = getPlanet(contract.fullDestination);
                     
                     // If we're at the source, we should pick up this cargo
                     if (currentIndex === sourceIndex) {
@@ -1488,7 +1530,15 @@
                     else if (currentIndex === destIndex) {
                         cargo[contract.resource] = (cargo[contract.resource] || 0) - contract.scu;
                     }
-                    // If we're between source and destination, we should be carrying this cargo
+                    // If we're on the same planet as source but not at source, and we've passed the source
+                    else if (currentPlanet === sourcePlanet && currentIndex > sourceIndex) {
+                        cargo[contract.resource] = (cargo[contract.resource] || 0) + contract.scu;
+                    }
+                    // If we're on the same planet as destination but not at destination, and we haven't reached destination yet
+                    else if (currentPlanet === destPlanet && currentIndex < destIndex) {
+                        cargo[contract.resource] = (cargo[contract.resource] || 0) + contract.scu;
+                    }
+                    // If we're between planets (source planet < current planet < destination planet)
                     else if (currentIndex > sourceIndex && currentIndex < destIndex) {
                         cargo[contract.resource] = (cargo[contract.resource] || 0) + contract.scu;
                     }
@@ -1511,11 +1561,23 @@
             
             // Create route display
             let html = '<div class="section">';
-            html += '<h3>🚛 Optimized Route</h3>';
+            html += '<h3>🚛 Optimized Route (Planet-Based)</h3>';
             
             if (optimizedRoute.length > 0) {
                 html += '<div class="route-container">';
+                
+                // Extract planet from location
+                function getPlanet(loc) {
+                    const match = loc.match(/\(([^)]+)\)$/);
+                    return match ? match[1] : 'Unknown';
+                }
+                
+                let currentPlanet = null;
                 optimizedRoute.forEach((location, index) => {
+                    const planet = getPlanet(location);
+                    const isNewPlanet = planet !== currentPlanet;
+                    currentPlanet = planet;
+                    
                     const cargo = calculateCargoAtLocation(location, optimizedRoute);
                     const cargoHtml = Object.entries(cargo).map(([resource, amount]) => {
                         const sign = amount > 0 ? '+' : '';
@@ -1524,9 +1586,12 @@
                     }).join(', ');
                     
                     html += `
-                        <div class="route-step">
+                        <div class="route-step ${isNewPlanet ? 'new-planet' : ''}">
                             <div class="route-step-number">${index + 1}</div>
-                            <div class="route-step-location">${location}</div>
+                            <div class="route-step-location">
+                                ${location}
+                                ${isNewPlanet ? `<div class="planet-indicator">🌍 ${planet}</div>` : ''}
+                            </div>
                             <div class="route-step-cargo">${cargoHtml || 'No cargo change'}</div>
                         </div>
                     `;
@@ -1686,6 +1751,17 @@
             });
         }
         
+        function resolveAlias(query) {
+            // Check if the query matches any alias
+            const normalizedQuery = query.toLowerCase().trim();
+            for (const [alias, realNames] of Object.entries(DESTINATIONS_ALIASES)) {
+                if (alias.toLowerCase() === normalizedQuery) {
+                    return Array.isArray(realNames) ? realNames : [realNames];
+                }
+            }
+            return null;
+        }
+        
         function setupTypeahead() {
             const input = document.getElementById('destinationInput');
             const dropdown = document.getElementById('destinationDropdown');
@@ -1704,6 +1780,14 @@
                 
                 if (query.length === 0) {
                     showFullHierarchy();
+                    return;
+                }
+                
+                // Check for aliases first
+                const resolvedAlias = resolveAlias(this.value);
+                if (resolvedAlias) {
+                    // If we found an alias, show the real location
+                    showAliasResult(resolvedAlias, this.value);
                     return;
                 }
                 
@@ -1763,6 +1847,73 @@
                             const locationDiv = document.createElement('div');
                             locationDiv.className = 'dropdown-location';
                             locationDiv.innerHTML = `<div class="dropdown-location-text">${location} <span style="color: #999; font-size: 0.9em;">(${region})</span></div>`;
+                            locationDiv.addEventListener('click', () => selectDestination(location, region));
+                            regionDiv.appendChild(locationDiv);
+                            selectableItems.push(locationDiv);
+                        });
+                        
+                        systemDiv.appendChild(regionDiv);
+                    });
+                    
+                    dropdown.appendChild(systemDiv);
+                });
+                
+                dropdown.style.display = 'block';
+            }
+            
+            function showAliasResult(realNames, alias) {
+                dropdown.innerHTML = '';
+                selectableItems = [];
+                
+                // Group locations by system and region
+                const groupedLocations = {};
+                
+                realNames.forEach(realName => {
+                    // Find the real location in the hierarchical structure
+                    outer: for (const [system, regions] of Object.entries(DESTINATIONS_HIERARCHICAL)) {
+                        for (const [region, locations] of Object.entries(regions)) {
+                            if (locations.includes(realName)) {
+                                if (!groupedLocations[system]) {
+                                    groupedLocations[system] = {};
+                                }
+                                if (!groupedLocations[system][region]) {
+                                    groupedLocations[system][region] = [];
+                                }
+                                groupedLocations[system][region].push(realName);
+                                break outer;
+                            }
+                        }
+                    }
+                });
+                
+                // Create the dropdown structure
+                Object.entries(groupedLocations).forEach(([system, regions]) => {
+                    const systemDiv = document.createElement('div');
+                    systemDiv.className = 'dropdown-system';
+                    
+                    const systemHeader = document.createElement('div');
+                    systemHeader.className = 'dropdown-system-header';
+                    systemHeader.textContent = system;
+                    systemDiv.appendChild(systemHeader);
+                    
+                    Object.entries(regions).forEach(([region, locations]) => {
+                        const regionDiv = document.createElement('div');
+                        regionDiv.className = 'dropdown-region';
+                        
+                        const regionHeader = document.createElement('div');
+                        regionHeader.className = 'dropdown-region-header';
+                        regionHeader.textContent = region;
+                        regionDiv.appendChild(regionHeader);
+                        
+                        locations.forEach(location => {
+                            const locationDiv = document.createElement('div');
+                            locationDiv.className = 'dropdown-location';
+                            locationDiv.innerHTML = `
+                                <div class="dropdown-location-text">
+                                    ${location} <span style="color: #999; font-size: 0.9em;">(${region})</span>
+                                    <div style="color: #00d4ff; font-size: 0.8em; margin-top: 2px;">Alias for: ${alias}</div>
+                                </div>
+                            `;
                             locationDiv.addEventListener('click', () => selectDestination(location, region));
                             regionDiv.appendChild(locationDiv);
                             selectableItems.push(locationDiv);
