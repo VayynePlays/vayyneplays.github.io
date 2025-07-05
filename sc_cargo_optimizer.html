@@ -580,6 +580,51 @@
             color: #e0e6ed;
             font-weight: 500;
         }
+        
+        .route-container {
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+        
+        .route-step {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            margin: 8px 0;
+            background: rgba(15, 20, 25, 0.6);
+            border-radius: 6px;
+            border-left: 4px solid #00d4ff;
+        }
+        
+        .route-step-number {
+            background: #00d4ff;
+            color: #0f1419;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9em;
+            flex-shrink: 0;
+        }
+        
+        .route-step-location {
+            font-weight: 600;
+            color: #e0e6ed;
+            flex: 1;
+        }
+        
+        .route-step-cargo {
+            color: #a0aec0;
+            font-size: 0.9em;
+            text-align: right;
+        }
     </style>
 </head>
 <body>
@@ -596,15 +641,10 @@
         <div id="resources" class="tab-content active">
             <div class="section">
                 <div class="input-group">
-                    <label for="resourceSCU">SCU Amount:</label>
-                    <input type="number" id="resourceSCU" placeholder="Enter SCU amount" min="1">
-                </div>
-                
-                <div class="input-group">
-                    <label for="resourceInput">Resource:</label>
+                    <label for="sourceInput">Source:</label>
                     <div class="typeahead-container">
-                        <input type="text" id="resourceInput" placeholder="Type resource name (e.g., Agricium, Titanium)..." autocomplete="off">
-                        <div id="resourceDropdown" class="dropdown-menu"></div>
+                        <input type="text" id="sourceInput" placeholder="Type source location (e.g., HDMS-Anderson, Lorville)..." autocomplete="off">
+                        <div id="sourceDropdown" class="dropdown-menu"></div>
                     </div>
                 </div>
                 
@@ -617,7 +657,20 @@
                 </div>
                 
                 <div class="input-group">
-                    <button onclick="addResource()">Add Resource</button>
+                    <label for="resourceInput">Resource:</label>
+                    <div class="typeahead-container">
+                        <input type="text" id="resourceInput" placeholder="Type resource name (e.g., Agricium, Titanium)..." autocomplete="off">
+                        <div id="resourceDropdown" class="dropdown-menu"></div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="resourceSCU">SCU Amount:</label>
+                    <input type="number" id="resourceSCU" placeholder="Enter SCU amount" min="1">
+                </div>
+                
+                <div class="input-group">
+                    <button onclick="addContract()">Add Contract</button>
                 </div>
             </div>
             
@@ -626,7 +679,7 @@
                 <div class="stats-grid">
                     <div class="stat-item">
                         <span class="stat-value" id="totalResources">0</span>
-                        <div class="stat-label">Resources</div>
+                        <div class="stat-label">Contracts</div>
                     </div>
                     <div class="stat-item">
                         <span class="stat-value" id="totalSCU">0</span>
@@ -642,16 +695,16 @@
                     </div>
                 </div>
                 <div style="margin-top: 15px; text-align: center;">
-                    <button class="secondary" onclick="clearAllResources()">Clear All Resources</button>
+                    <button class="secondary" onclick="clearAllContracts()">Clear All Contracts</button>
                 </div>
             </div>
             
             <div class="resource-list">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3>Resource List</h3>
+                    <h3>Contract List</h3>
                     <div class="checkbox-group" style="margin: 0;">
                         <input type="checkbox" id="preventDuplicates" checked>
-                        <label for="preventDuplicates">Prevent duplicate resource-destination pairs</label>
+                        <label for="preventDuplicates">Prevent duplicate contracts</label>
                         <span id="duplicateStatus" class="duplicate-status" style="margin-left: 10px; font-size: 0.8em; color: #00d4ff;">✓ Active</span>
                     </div>
                 </div>
@@ -676,14 +729,14 @@
             
             <div class="info-box">
                 <h3>📦 How to Use This Tool</h3>
-                <p><strong>Perfect for organizing multiple delivery contracts!</strong> When you have several contracts and need to load your cargo grid efficiently:</p>
+                <p><strong>Perfect for organizing multiple delivery contracts with route optimization!</strong> When you have several contracts and want to minimize backtracking:</p>
                 <ol style="margin: 10px 0; padding-left: 20px;">
-                    <li><strong>Add Your Contracts:</strong> For each delivery contract, add the resource, destination, and SCU amount</li>
-                    <li><strong>Review the Optimization:</strong> The tool shows you exactly how many boxes of each size you need</li>
-                    <li><strong>Organize Your Grid:</strong> Use the box breakdown to create separate piles for each destination</li>
-                    <li><strong>Load Efficiently:</strong> Stack the boxes according to the optimization to maximize space usage</li>
+                    <li><strong>Add Your Contracts:</strong> For each contract, specify the source, destination, resource, and SCU amount</li>
+                    <li><strong>Review the Route:</strong> The tool automatically optimizes your route to minimize backtracking</li>
+                    <li><strong>Check Cargo Flow:</strong> See exactly what cargo you'll be carrying at each step</li>
+                    <li><strong>Organize Your Grid:</strong> Use the box breakdown to prepare cargo for each contract</li>
                 </ol>
-                <p><strong>Pro Tip:</strong> The efficiency percentage shows how well your cargo fits - higher is better! Each destination is grouped separately so you can easily see what goes where.</p>
+                <p><strong>Pro Tip:</strong> The route optimization prioritizes locations that are both sources and destinations to minimize empty cargo space!</p>
             </div>
         </div>
         
@@ -779,8 +832,8 @@
             AUTO_SAVE: 'sc_haulmaster_auto_save'
         };
         
-        // Resource list
-        let resourceList = [];
+        // Contract list
+        let contractList = [];
         
         // Custom Destinations logic
         const CUSTOM_DESTINATIONS_KEY = 'sc_haulmaster_custom_destinations';
@@ -829,6 +882,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadConfiguration();
             setupTypeahead();
+            setupSourceTypeahead();
             setupDuplicatePrevention();
             setupAutoSave();
             updateBoxSizeDisplay();
@@ -884,7 +938,7 @@
                 document.getElementById('autoSave').checked = true;
                 updateBoxSizeDisplay();
                 saveConfiguration();
-                updateAllResourceOptimizations();
+                updateAllContractOptimizations();
             }
         }
         
@@ -1081,8 +1135,8 @@
             // Save configuration to localStorage
             saveConfiguration();
             
-            // Recalculate all resources when box sizes change
-            updateAllResourceOptimizations();
+            // Recalculate all contracts when box sizes change
+            updateAllContractOptimizations();
         }
         
         function optimizeStorage(targetSCU) {
@@ -1204,19 +1258,20 @@
             resultsDiv.style.display = 'block';
         }
         
-        function addResource() {
-            const resourceInput = document.getElementById('resourceInput');
+        function addContract() {
+            const sourceInput = document.getElementById('sourceInput');
             const destinationInput = document.getElementById('destinationInput');
+            const resourceInput = document.getElementById('resourceInput');
             const scuInput = document.getElementById('resourceSCU');
             const preventDuplicates = document.getElementById('preventDuplicates');
             
-            const resource = resourceInput.value;
+            const source = sourceInput.value;
             const destination = destinationInput.value;
-            const destinationFull = destinationInput.dataset.selected || destination;
+            const resource = resourceInput.value;
             const scu = parseInt(scuInput.value);
             
-            if (!resource) {
-                alert('Please select a resource');
+            if (!source) {
+                alert('Please select a source');
                 return;
             }
             
@@ -1225,127 +1280,298 @@
                 return;
             }
             
+            if (!resource) {
+                alert('Please select a resource');
+                return;
+            }
+            
             if (!scu || scu < 1) {
                 alert('Please enter a valid SCU amount');
                 return;
             }
             
-            // Check for duplicates if prevention is enabled (same resource AND destination)
-            if (preventDuplicates.checked && resourceList.some(r => r.name === resource && r.destination === destination)) {
-                alert(`${resource} to ${destination} is already in your cargo list`);
-                return;
-            }
-
-            // Check if destination is not in any known list, and add as custom if needed
-            let isKnown = false;
-            if (typeof DESTINATIONS_BASIC !== 'undefined' && DESTINATIONS_BASIC.includes(destination)) {
-                isKnown = true;
-            } else if (typeof DESTINATIONS_HIERARCHICAL !== 'undefined') {
-                // Check all locations in hierarchical
-                outer: for (const sys of Object.values(DESTINATIONS_HIERARCHICAL)) {
-                    for (const reg of Object.values(sys)) {
-                        if (reg.includes && reg.includes(destination)) {
-                            isKnown = true;
+            // Get the planet/moon names for source and destination
+            let sourcePlanetMoon = sourceInput.dataset.planetMoon || '';
+            let destPlanetMoon = destinationInput.dataset.planetMoon || '';
+            
+            if (!sourcePlanetMoon && typeof DESTINATIONS_HIERARCHICAL !== 'undefined') {
+                outer: for (const [system, regions] of Object.entries(DESTINATIONS_HIERARCHICAL)) {
+                    for (const [region, locations] of Object.entries(regions)) {
+                        if (locations.includes && locations.includes(source)) {
+                            sourcePlanetMoon = region;
                             break outer;
                         }
                     }
                 }
             }
-            if (!isKnown && typeof CUSTOM_DESTINATIONS !== 'undefined' && !CUSTOM_DESTINATIONS.includes(destination)) {
+            
+            if (!destPlanetMoon && typeof DESTINATIONS_HIERARCHICAL !== 'undefined') {
+                outer: for (const [system, regions] of Object.entries(DESTINATIONS_HIERARCHICAL)) {
+                    for (const [region, locations] of Object.entries(regions)) {
+                        if (locations.includes && locations.includes(destination)) {
+                            destPlanetMoon = region;
+                            break outer;
+                        }
+                    }
+                }
+            }
+            
+            // Create full location strings with planet/moon
+            const fullSource = sourcePlanetMoon ? `${source} (${sourcePlanetMoon})` : source;
+            const fullDestination = destPlanetMoon ? `${destination} (${destPlanetMoon})` : destination;
+            
+            // Check for duplicates if prevention is enabled (same resource, source, AND destination)
+            if (preventDuplicates.checked && contractList.some(c => 
+                c.resource === resource && 
+                c.fullSource === fullSource && 
+                c.fullDestination === fullDestination
+            )) {
+                alert(`${resource} from ${fullSource} to ${fullDestination} is already in your contract list`);
+                return;
+            }
+
+            // Check if locations are not in any known list, and add as custom if needed
+            let sourceKnown = false;
+            let destKnown = false;
+            
+            if (typeof DESTINATIONS_BASIC !== 'undefined') {
+                sourceKnown = DESTINATIONS_BASIC.includes(source);
+                destKnown = DESTINATIONS_BASIC.includes(destination);
+            } else if (typeof DESTINATIONS_HIERARCHICAL !== 'undefined') {
+                outer: for (const sys of Object.values(DESTINATIONS_HIERARCHICAL)) {
+                    for (const reg of Object.values(sys)) {
+                        if (reg.includes) {
+                            if (reg.includes(source)) sourceKnown = true;
+                            if (reg.includes(destination)) destKnown = true;
+                            if (sourceKnown && destKnown) break outer;
+                        }
+                    }
+                }
+            }
+            
+            if (!sourceKnown && typeof CUSTOM_DESTINATIONS !== 'undefined' && !CUSTOM_DESTINATIONS.includes(source)) {
+                addCustomDestination(source);
+            }
+            if (!destKnown && typeof CUSTOM_DESTINATIONS !== 'undefined' && !CUSTOM_DESTINATIONS.includes(destination)) {
                 addCustomDestination(destination);
             }
 
             const optimization = optimizeStorage(scu);
             
-            const resourceItem = {
-                name: resource,
+            const contractItem = {
+                source: source,
+                fullSource: fullSource,
+                sourcePlanetMoon: sourcePlanetMoon,
                 destination: destination,
+                fullDestination: fullDestination,
+                destPlanetMoon: destPlanetMoon,
+                resource: resource,
                 scu: scu,
                 optimization: optimization,
                 id: Date.now()
             };
             
-            resourceList.push(resourceItem);
+            contractList.push(contractItem);
             
             // Clear inputs
-            resourceInput.value = '';
+            sourceInput.value = '';
+            sourceInput.dataset.selected = '';
+            sourceInput.dataset.planetMoon = '';
             destinationInput.value = '';
+            destinationInput.dataset.selected = '';
+            destinationInput.dataset.planetMoon = '';
+            resourceInput.value = '';
             scuInput.value = '';
             
-            updateResourceDisplay();
-            updateResourceSummary();
+            updateContractDisplay();
+            updateContractSummary();
         }
         
-        function removeResource(id) {
-            resourceList = resourceList.filter(r => r.id !== id);
-            updateResourceDisplay();
-            updateResourceSummary();
+        function removeContract(id) {
+            contractList = contractList.filter(c => c.id !== id);
+            updateContractDisplay();
+            updateContractSummary();
         }
         
-        function clearAllResources() {
-            if (resourceList.length === 0) return;
+        function clearAllContracts() {
+            if (contractList.length === 0) return;
             
-            if (confirm('Are you sure you want to clear all resources?')) {
-                resourceList = [];
-                updateResourceDisplay();
-                updateResourceSummary();
+            if (confirm('Are you sure you want to clear all contracts?')) {
+                contractList = [];
+                updateContractDisplay();
+                updateContractSummary();
             }
         }
         
-        function updateAllResourceOptimizations() {
-            resourceList.forEach(resource => {
-                resource.optimization = optimizeStorage(resource.scu);
+        function updateAllContractOptimizations() {
+            contractList.forEach(contract => {
+                contract.optimization = optimizeStorage(contract.scu);
             });
-            updateResourceDisplay();
-            updateResourceSummary();
+            updateContractDisplay();
+            updateContractSummary();
         }
         
-        function updateResourceDisplay() {
+        function optimizeRoute() {
+            if (contractList.length === 0) return [];
+            
+            // Create a map of all unique locations
+            const locations = new Set();
+            contractList.forEach(contract => {
+                locations.add(contract.fullSource);
+                locations.add(contract.fullDestination);
+            });
+            
+            // Create a graph of connections
+            const connections = {};
+            contractList.forEach(contract => {
+                if (!connections[contract.fullSource]) connections[contract.fullSource] = [];
+                if (!connections[contract.fullDestination]) connections[contract.fullDestination] = [];
+                
+                connections[contract.fullSource].push({
+                    to: contract.fullDestination,
+                    resource: contract.resource,
+                    scu: contract.scu,
+                    contractId: contract.id
+                });
+            });
+            
+            // Find transfer points (locations that are both sources and destinations)
+            const transferPoints = [];
+            locations.forEach(location => {
+                const isSource = contractList.some(c => c.fullSource === location);
+                const isDestination = contractList.some(c => c.fullDestination === location);
+                if (isSource && isDestination) {
+                    transferPoints.push(location);
+                }
+            });
+            
+            // Simple route optimization: prioritize transfer points
+            const route = [];
+            const visited = new Set();
+            const pendingContracts = [...contractList];
+            
+            // Start with transfer points first
+            transferPoints.forEach(point => {
+                if (!visited.has(point)) {
+                    route.push(point);
+                    visited.add(point);
+                }
+            });
+            
+            // Add remaining locations
+            locations.forEach(location => {
+                if (!visited.has(location)) {
+                    route.push(location);
+                    visited.add(location);
+                }
+            });
+            
+            return route;
+        }
+        
+        function calculateCargoAtLocation(location, routeIndex) {
+            const cargo = {};
+            
+            // Calculate what cargo should be at this location based on the route
+            contractList.forEach(contract => {
+                const sourceIndex = routeIndex.findIndex(route => route === contract.fullSource);
+                const destIndex = routeIndex.findIndex(route => route === contract.fullDestination);
+                
+                if (sourceIndex !== -1 && destIndex !== -1) {
+                    const currentIndex = routeIndex.indexOf(location);
+                    
+                    // If we're at the source, we should pick up this cargo
+                    if (currentIndex === sourceIndex) {
+                        cargo[contract.resource] = (cargo[contract.resource] || 0) + contract.scu;
+                    }
+                    // If we're at the destination, we should deliver this cargo
+                    else if (currentIndex === destIndex) {
+                        cargo[contract.resource] = (cargo[contract.resource] || 0) - contract.scu;
+                    }
+                    // If we're between source and destination, we should be carrying this cargo
+                    else if (currentIndex > sourceIndex && currentIndex < destIndex) {
+                        cargo[contract.resource] = (cargo[contract.resource] || 0) + contract.scu;
+                    }
+                }
+            });
+            
+            return cargo;
+        }
+        
+        function updateContractDisplay() {
             const container = document.getElementById('resourceListContent');
             
-            if (resourceList.length === 0) {
-                container.innerHTML = '<div class="empty-state">No resources added yet. Add some resources above to get started!</div>';
+            if (contractList.length === 0) {
+                container.innerHTML = '<div class="empty-state">No contracts added yet. Add some contracts above to get started!</div>';
                 return;
             }
             
-            // Group resources by destination
-            const groupedResources = resourceList.reduce((groups, resource) => {
-                const destination = resource.destination;
-                if (!groups[destination]) {
-                    groups[destination] = [];
+            // Get optimized route
+            const optimizedRoute = optimizeRoute();
+            
+            // Create route display
+            let html = '<div class="section">';
+            html += '<h3>🚛 Optimized Route</h3>';
+            
+            if (optimizedRoute.length > 0) {
+                html += '<div class="route-container">';
+                optimizedRoute.forEach((location, index) => {
+                    const cargo = calculateCargoAtLocation(location, optimizedRoute);
+                    const cargoHtml = Object.entries(cargo).map(([resource, amount]) => {
+                        const sign = amount > 0 ? '+' : '';
+                        const color = amount > 0 ? '#00d4ff' : '#ff6b6b';
+                        return `<span style="color: ${color}; font-weight: 600;">${sign}${amount} SCU ${resource}</span>`;
+                    }).join(', ');
+                    
+                    html += `
+                        <div class="route-step">
+                            <div class="route-step-number">${index + 1}</div>
+                            <div class="route-step-location">${location}</div>
+                            <div class="route-step-cargo">${cargoHtml || 'No cargo change'}</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            
+            // Group contracts by source and destination
+            const groupedContracts = contractList.reduce((groups, contract) => {
+                const key = `${contract.fullSource} → ${contract.fullDestination}`;
+                if (!groups[key]) {
+                    groups[key] = [];
                 }
-                groups[destination].push(resource);
+                groups[key].push(contract);
                 return groups;
             }, {});
             
-            // Sort destinations alphabetically
-            const sortedDestinations = Object.keys(groupedResources).sort();
+            // Sort contracts
+            const sortedContracts = Object.keys(groupedContracts).sort();
             
-            let html = '';
-            
-            sortedDestinations.forEach(destination => {
-                const resources = groupedResources[destination];
+            sortedContracts.forEach(routeKey => {
+                const contracts = groupedContracts[routeKey];
                 
-                // Calculate destination totals
-                const destTotalSCU = resources.reduce((sum, r) => sum + r.scu, 0);
-                const destTotalBoxes = resources.reduce((sum, r) => sum + (r.optimization ? r.optimization.total : 0), 0);
-                const validOptimizations = resources.filter(r => r.optimization);
-                const destAvgEfficiency = validOptimizations.length > 0 
-                    ? validOptimizations.reduce((sum, r) => sum + r.optimization.efficiency, 0) / validOptimizations.length
+                // Calculate route totals
+                const routeTotalSCU = contracts.reduce((sum, c) => sum + c.scu, 0);
+                const routeTotalBoxes = contracts.reduce((sum, c) => sum + (c.optimization ? c.optimization.total : 0), 0);
+                const validOptimizations = contracts.filter(c => c.optimization);
+                const routeAvgEfficiency = validOptimizations.length > 0 
+                    ? validOptimizations.reduce((sum, c) => sum + c.optimization.efficiency, 0) / validOptimizations.length
                     : 0;
                 
                 html += `
                     <div class="destination-group">
                         <div class="destination-header">
-                            <h4>${destination}</h4>
+                            <h4>${routeKey}</h4>
                             <div class="destination-stats">
-                                ${destTotalSCU} SCU • ${destTotalBoxes} boxes • ${destAvgEfficiency.toFixed(1)}% avg efficiency
+                                ${routeTotalSCU} SCU • ${routeTotalBoxes} boxes • ${routeAvgEfficiency.toFixed(1)}% avg efficiency
                             </div>
                         </div>
                 `;
                 
-                resources.forEach(resource => {
-                    const optimization = resource.optimization;
+                contracts.forEach(contract => {
+                    const optimization = contract.optimization;
                     let optimizationHtml = '';
                     
                     if (optimization) {
@@ -1373,12 +1599,12 @@
                     html += `
                         <div class="resource-item">
                             <div class="resource-info">
-                                <div class="resource-name">${resource.name}</div>
-                                <div class="resource-scu">${resource.scu} SCU</div>
+                                <div class="resource-name">${contract.resource}</div>
+                                <div class="resource-scu">${contract.scu} SCU</div>
                                 ${optimizationHtml}
                             </div>
                             <div class="resource-actions">
-                                <button class="secondary small" onclick="removeResource(${resource.id})">Remove</button>
+                                <button class="secondary small" onclick="removeContract(${contract.id})">Remove</button>
                             </div>
                         </div>
                     `;
@@ -1390,28 +1616,28 @@
             container.innerHTML = html;
         }
         
-        function updateResourceSummary() {
+        function updateContractSummary() {
             const summaryDiv = document.getElementById('resourcesSummary');
             
-            if (resourceList.length === 0) {
+            if (contractList.length === 0) {
                 summaryDiv.style.display = 'none';
                 return;
             }
             
             summaryDiv.style.display = 'block';
             
-            const totalResources = resourceList.length;
-            const totalSCU = resourceList.reduce((sum, r) => sum + r.scu, 0);
-            const totalBoxes = resourceList.reduce((sum, r) => {
-                return sum + (r.optimization ? r.optimization.total : 0);
+            const totalContracts = contractList.length;
+            const totalSCU = contractList.reduce((sum, c) => sum + c.scu, 0);
+            const totalBoxes = contractList.reduce((sum, c) => {
+                return sum + (c.optimization ? c.optimization.total : 0);
             }, 0);
             
-            const validOptimizations = resourceList.filter(r => r.optimization);
+            const validOptimizations = contractList.filter(c => c.optimization);
             const avgEfficiency = validOptimizations.length > 0 
-                ? validOptimizations.reduce((sum, r) => sum + r.optimization.efficiency, 0) / validOptimizations.length
+                ? validOptimizations.reduce((sum, c) => sum + c.optimization.efficiency, 0) / validOptimizations.length
                 : 0;
             
-            document.getElementById('totalResources').textContent = totalResources;
+            document.getElementById('totalResources').textContent = totalContracts;
             document.getElementById('totalSCU').textContent = totalSCU;
             document.getElementById('totalBoxes').textContent = totalBoxes;
             document.getElementById('avgEfficiency').textContent = avgEfficiency.toFixed(1) + '%';
@@ -1427,7 +1653,7 @@
         });
         
         document.getElementById('resourceSCU').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') addResource();
+            if (e.key === 'Enter') addContract();
         });
         
         function setupDuplicatePrevention() {
@@ -1536,8 +1762,8 @@
                         locations.forEach(location => {
                             const locationDiv = document.createElement('div');
                             locationDiv.className = 'dropdown-location';
-                            locationDiv.innerHTML = `<div class="dropdown-location-text">${location}</div>`;
-                            locationDiv.addEventListener('click', () => selectDestination(location));
+                            locationDiv.innerHTML = `<div class="dropdown-location-text">${location} <span style="color: #999; font-size: 0.9em;">(${region})</span></div>`;
+                            locationDiv.addEventListener('click', () => selectDestination(location, region));
                             regionDiv.appendChild(locationDiv);
                             selectableItems.push(locationDiv);
                         });
@@ -1608,8 +1834,8 @@
                             locations.forEach(location => {
                                 const locationDiv = document.createElement('div');
                                 locationDiv.className = 'dropdown-location';
-                                locationDiv.innerHTML = `<div class="dropdown-location-text">${location}</div>`;
-                                locationDiv.addEventListener('click', () => selectDestination(location));
+                                locationDiv.innerHTML = `<div class="dropdown-location-text">${location} <span style="color: #999; font-size: 0.9em;">(${region})</span></div>`;
+                                locationDiv.addEventListener('click', () => selectDestination(location, region));
                                 regionDiv.appendChild(locationDiv);
                                 selectableItems.push(locationDiv);
                             });
@@ -1635,9 +1861,193 @@
                 });
             }
             
-            function selectDestination(dest) {
+            function selectDestination(dest, planetMoon = '') {
                 input.value = dest;
                 input.dataset.selected = dest;
+                input.dataset.planetMoon = planetMoon;
+                hideDropdown();
+            }
+        }
+        
+        function setupSourceTypeahead() {
+            const input = document.getElementById('sourceInput');
+            const dropdown = document.getElementById('sourceDropdown');
+            let selectedIndex = -1;
+            let selectableItems = [];
+            
+            // Show full hierarchy when input is focused and empty
+            input.addEventListener('focus', function() {
+                if (this.value.length === 0) {
+                    showFullHierarchy();
+                }
+            });
+            
+            input.addEventListener('input', function() {
+                const query = this.value.toLowerCase();
+                
+                if (query.length === 0) {
+                    showFullHierarchy();
+                    return;
+                }
+                
+                // Filter destinations based on query
+                const filteredResults = filterDestinations(query);
+                showFilteredResults(filteredResults);
+                selectedIndex = -1;
+            });
+            
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, selectableItems.length - 1);
+                    highlightItem();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, -1);
+                    highlightItem();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (selectedIndex >= 0 && selectableItems[selectedIndex]) {
+                        selectSource(selectableItems[selectedIndex]);
+                    }
+                } else if (e.key === 'Escape') {
+                    hideDropdown();
+                }
+            });
+            
+            input.addEventListener('blur', function() {
+                // Delay hiding to allow click events
+                setTimeout(() => hideDropdown(), 150);
+            });
+            
+            function showFullHierarchy() {
+                dropdown.innerHTML = '';
+                selectableItems = [];
+                
+                Object.entries(DESTINATIONS_HIERARCHICAL).forEach(([system, regions]) => {
+                    const systemDiv = document.createElement('div');
+                    systemDiv.className = 'dropdown-system';
+                    
+                    const systemHeader = document.createElement('div');
+                    systemHeader.className = 'dropdown-system-header';
+                    systemHeader.textContent = system;
+                    systemDiv.appendChild(systemHeader);
+                    
+                    Object.entries(regions).forEach(([region, locations]) => {
+                        const regionDiv = document.createElement('div');
+                        regionDiv.className = 'dropdown-region';
+                        
+                        const regionHeader = document.createElement('div');
+                        regionHeader.className = 'dropdown-region-header';
+                        regionHeader.textContent = region;
+                        regionDiv.appendChild(regionHeader);
+                        
+                        locations.forEach(location => {
+                            const locationDiv = document.createElement('div');
+                            locationDiv.className = 'dropdown-location';
+                            locationDiv.innerHTML = `<div class="dropdown-location-text">${location} <span style="color: #999; font-size: 0.9em;">(${region})</span></div>`;
+                            locationDiv.addEventListener('click', () => selectSource(location, region));
+                            regionDiv.appendChild(locationDiv);
+                            selectableItems.push(locationDiv);
+                        });
+                        
+                        systemDiv.appendChild(regionDiv);
+                    });
+                    
+                    dropdown.appendChild(systemDiv);
+                });
+                
+                dropdown.style.display = 'block';
+            }
+            
+            function filterDestinations(query) {
+                const results = [];
+                
+                Object.entries(DESTINATIONS_HIERARCHICAL).forEach(([system, regions]) => {
+                    const systemResults = { system, regions: {} };
+                    let hasMatches = false;
+                    
+                    Object.entries(regions).forEach(([region, locations]) => {
+                        const matchingLocations = locations.filter(location => 
+                            location.toLowerCase().includes(query)
+                        );
+                        
+                        if (matchingLocations.length > 0) {
+                            systemResults.regions[region] = matchingLocations;
+                            hasMatches = true;
+                        }
+                    });
+                    
+                    if (hasMatches) {
+                        results.push(systemResults);
+                    }
+                });
+                
+                return results;
+            }
+            
+            function showFilteredResults(filteredResults) {
+                dropdown.innerHTML = '';
+                selectableItems = [];
+                
+                if (filteredResults.length === 0) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'dropdown-no-results';
+                    noResults.textContent = 'No matches found. Try a different search term or enter custom destination.';
+                    dropdown.appendChild(noResults);
+                } else {
+                    filteredResults.forEach(({ system, regions }) => {
+                        const systemDiv = document.createElement('div');
+                        systemDiv.className = 'dropdown-system';
+                        
+                        const systemHeader = document.createElement('div');
+                        systemHeader.className = 'dropdown-system-header';
+                        systemHeader.textContent = system;
+                        systemDiv.appendChild(systemHeader);
+                        
+                        Object.entries(regions).forEach(([region, locations]) => {
+                            const regionDiv = document.createElement('div');
+                            regionDiv.className = 'dropdown-region';
+                            
+                            const regionHeader = document.createElement('div');
+                            regionHeader.className = 'dropdown-region-header';
+                            regionHeader.textContent = region;
+                            regionDiv.appendChild(regionHeader);
+                            
+                            locations.forEach(location => {
+                                const locationDiv = document.createElement('div');
+                                locationDiv.className = 'dropdown-location';
+                                locationDiv.innerHTML = `<div class="dropdown-location-text">${location} <span style="color: #999; font-size: 0.9em;">(${region})</span></div>`;
+                                locationDiv.addEventListener('click', () => selectSource(location, region));
+                                regionDiv.appendChild(locationDiv);
+                                selectableItems.push(locationDiv);
+                            });
+                            
+                            systemDiv.appendChild(regionDiv);
+                        });
+                        
+                        dropdown.appendChild(systemDiv);
+                    });
+                }
+                
+                dropdown.style.display = 'block';
+            }
+            
+            function hideDropdown() {
+                dropdown.style.display = 'none';
+                selectedIndex = -1;
+            }
+            
+            function highlightItem() {
+                selectableItems.forEach((item, index) => {
+                    item.classList.toggle('highlighted', index === selectedIndex);
+                });
+            }
+            
+            function selectSource(source, planetMoon = '') {
+                input.value = source;
+                input.dataset.selected = source;
+                input.dataset.planetMoon = planetMoon;
                 hideDropdown();
             }
         }
@@ -1690,4 +2100,5 @@
         }
     </script>
 </body>
+</html>
 </html>
