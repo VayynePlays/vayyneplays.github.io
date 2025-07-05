@@ -491,7 +491,14 @@
         
         .resource-scu {
             color: #e0e6ed;
+            margin-bottom: 5px;
+        }
+        
+        .resource-route {
+            color: #a0aec0;
+            font-size: 0.9em;
             margin-bottom: 10px;
+            font-style: italic;
         }
         
         .resource-actions {
@@ -543,23 +550,7 @@
             box-shadow: 0 0 5px rgba(0, 212, 255, 0.3);
         }
         
-        .duplicate-status {
-            transition: all 0.3s ease;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            font-weight: 500;
-        }
-        
-        .duplicate-status.active {
-            background: rgba(0, 212, 255, 0.1);
-            color: #00d4ff;
-        }
-        
-        .duplicate-status.inactive {
-            background: rgba(255, 193, 7, 0.1);
-            color: #ffc107;
-        }
+
         
         .dropdown-resource {
             padding: 8px 15px;
@@ -647,6 +638,7 @@
             <button class="nav-tab active" onclick="switchTab('resources')">Resource Manager</button>
             <button class="nav-tab" onclick="switchTab('optimizer')">SCU Optimizer</button>
             <button class="nav-tab" onclick="switchTab('config')">Configuration</button>
+            <button class="nav-tab" onclick="switchTab('news')">News & Updates</button>
         </div>
         
         <!-- Resource Manager Tab -->
@@ -661,11 +653,8 @@
                 </div>
                 
                 <div class="input-group">
-                    <label for="destinationInput">Destination:</label>
-                    <div class="typeahead-container">
-                        <input type="text" id="destinationInput" placeholder="Type destination name (e.g., HDMS-Anderson, Lorville)..." autocomplete="off">
-                        <div id="destinationDropdown" class="dropdown-menu"></div>
-                    </div>
+                    <label for="resourceSCU">SCU Amount:</label>
+                    <input type="number" id="resourceSCU" placeholder="Enter SCU amount" min="1">
                 </div>
                 
                 <div class="input-group">
@@ -677,12 +666,16 @@
                 </div>
                 
                 <div class="input-group">
-                    <label for="resourceSCU">SCU Amount:</label>
-                    <input type="number" id="resourceSCU" placeholder="Enter SCU amount" min="1">
+                    <label for="destinationInput">Destination:</label>
+                    <div class="typeahead-container">
+                        <input type="text" id="destinationInput" placeholder="Type destination name (e.g., HDMS-Anderson, Lorville)..." autocomplete="off">
+                        <div id="destinationDropdown" class="dropdown-menu"></div>
+                    </div>
                 </div>
                 
                 <div class="input-group">
-                    <button onclick="addContract()">Add Contract</button>
+                    <button onclick="addContractItem()">Add to Contract</button>
+                    <button onclick="startNewContract()" style="margin-left: 10px;">New Contract</button>
                 </div>
             </div>
             
@@ -714,10 +707,17 @@
             <div class="resource-list">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3>Contract List</h3>
-                    <div class="checkbox-group" style="margin: 0;">
-                        <input type="checkbox" id="preventDuplicates" checked>
-                        <label for="preventDuplicates">Prevent duplicate contracts</label>
-                        <span id="duplicateStatus" class="duplicate-status" style="margin-left: 10px; font-size: 0.8em; color: #00d4ff;">✓ Active</span>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <button onclick="showHelp()" style="padding: 8px 12px; background: rgba(0, 212, 255, 0.2); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 4px; color: #00d4ff; cursor: pointer; font-size: 0.9em;">?</button>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="color: #00d4ff; font-weight: 600; font-size: 0.9em;">View:</label>
+                            <select id="viewMode" onchange="changeViewMode()" style="padding: 5px 10px; border-radius: 4px; background: rgba(15, 20, 25, 0.8); color: #e0e6ed; border: 1px solid rgba(0, 212, 255, 0.3);">
+                                <option value="optimal">Optimal Route</option>
+                                <option value="contract">By Contract</option>
+                                <option value="orbit">By Orbit</option>
+                                <option value="planet">By Planet</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div id="resourceListContent">
@@ -727,29 +727,7 @@
                 </div>
             </div>
             
-            <div class="info-box">
-                <h3>✅ Updated Destination Database</h3>
-                <p><strong>Fresh from <a href="https://uexcorp.space/resources/home/type/outposts/" target="_blank" rel="noopener" style="color: #00d4ff; text-decoration: none;">UEXcorp</a>!</strong> This destination list is now current as of Star Citizen 4.1.1 LIVE and includes:</p>
-                <ul style="margin: 10px 0; padding-left: 20px;">
-                    <li><strong>Cargo Elevator Locations Only:</strong> All destinations have cargo elevators for delivery</li>
-                    <li><strong>Stanton System:</strong> Major landing zones, stations, Lagrange points, and outposts with cargo terminals</li>
-                    <li><strong>Pyro System:</strong> Alpha 4.0 outposts across Bloom, Monox, Terminus, and other moons</li>
-                    <li><strong>100+ Deliverable Locations:</strong> Every location supports cargo delivery via elevators</li>
-                </ul>
-                <p>Type any location name to search, or enter custom destinations manually!</p>
-            </div>
-            
-            <div class="info-box">
-                <h3>📦 How to Use This Tool</h3>
-                <p><strong>Perfect for organizing multiple delivery contracts with planet-based route optimization!</strong> When you have several contracts and want to minimize interplanetary travel:</p>
-                <ol style="margin: 10px 0; padding-left: 20px;">
-                    <li><strong>Add Your Contracts:</strong> For each contract, specify the source, destination, resource, and SCU amount</li>
-                    <li><strong>Review the Route:</strong> The tool automatically groups all deliveries to each planet together</li>
-                    <li><strong>Check Cargo Flow:</strong> See exactly what cargo you'll be carrying at each step</li>
-                    <li><strong>Organize Your Grid:</strong> Use the box breakdown to prepare cargo for each contract</li>
-                </ol>
-                <p><strong>Pro Tip:</strong> The route optimization groups all locations on the same planet together to minimize interplanetary travel costs! Red borders indicate planet changes.</p>
-            </div>
+
         </div>
         
         <!-- SCU Optimizer Tab -->
@@ -824,6 +802,70 @@
                 <div style="margin-top:10px;color:#999;font-size:0.9em;">Custom destinations are only stored in your browser and are not shared or synced.</div>
             </div>
         </div>
+        
+        <!-- News & Updates Tab -->
+        <div id="news" class="tab-content">
+            <div class="section">
+                <h3>🚀 Latest Updates</h3>
+                
+                <div class="info-box">
+                    <h3>📅 Version 1.4 - Multiple Contracts & Smart Defaults</h3>
+                    <p><strong>New Feature:</strong> Support for multiple contracts in a single session!</p>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>New Contract Button:</strong> Start a new contract without clearing existing deliveries</li>
+                        <li><strong>Smart Defaults:</strong> Source and resource fields remember your last used values</li>
+                        <li><strong>Multiple View Modes:</strong> View by optimal route, contract, orbit/system, or planet</li>
+                        <li><strong>Enhanced Organization:</strong> Better grouping and display of complex multi-item contracts</li>
+                    </ul>
+                </div>
+                
+                <div class="info-box">
+                    <h3>📅 Version 1.3 - Alias Support</h3>
+                    <p><strong>New Feature:</strong> Location aliases for easier contract management!</p>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>Alias System:</strong> Use "Rayari, Inc" as an alias for "Hickes Research" and "Deakins Research"</li>
+                        <li><strong>Smart Resolution:</strong> Typeahead automatically resolves aliases to actual locations</li>
+                        <li><strong>Clear Labeling:</strong> Alias results are clearly marked in the dropdown</li>
+                        <li><strong>Flexible Mapping:</strong> One alias can map to multiple locations</li>
+                    </ul>
+                </div>
+                
+                <div class="info-box">
+                    <h3>📅 Version 1.2 - Planet-Based Route Optimization</h3>
+                    <p><strong>Major Enhancement:</strong> Intelligent route optimization that groups deliveries by planet!</p>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>Planet Grouping:</strong> All deliveries to a single planet are grouped together</li>
+                        <li><strong>Transfer Priority:</strong> Locations that are both sources and destinations are prioritized</li>
+                        <li><strong>Visual Indicators:</strong> Red borders show when you're changing planets</li>
+                        <li><strong>Cargo Flow Tracking:</strong> See exactly what cargo you'll carry at each step</li>
+                    </ul>
+                </div>
+                
+                <div class="info-box">
+                    <h3>📅 Version 1.1 - Contract System & Route Optimization</h3>
+                    <p><strong>Major Feature:</strong> Complete contract management with route optimization!</p>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>Contract-Based System:</strong> Organize deliveries by source and destination pairs</li>
+                        <li><strong>Route Optimization:</strong> Minimize backtracking with intelligent route planning</li>
+                        <li><strong>Transfer Points:</strong> Prioritize locations that are both sources and destinations</li>
+                        <li><strong>Cargo Capacity:</strong> Track cargo at each step of your journey</li>
+                        <li><strong>Enhanced Display:</strong> Multiple view modes for different organizational needs</li>
+                    </ul>
+                </div>
+                
+                <div class="info-box">
+                    <h3>📅 Version 1.0 - Initial Release</h3>
+                    <p><strong>Foundation:</strong> Core SCU optimization and destination management!</p>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>SCU Optimizer:</strong> Find the most efficient box combinations for any SCU amount</li>
+                        <li><strong>Destination Database:</strong> 100+ locations from Stanton and Pyro systems</li>
+                        <li><strong>Hierarchical Search:</strong> Browse locations by system and region</li>
+                        <li><strong>Custom Destinations:</strong> Add your own locations for flexibility</li>
+                        <li><strong>Box Size Configuration:</strong> Enable/disable box sizes to match your ship's capabilities</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
 
     <footer style="text-align: center; padding: 2rem 0; margin-top: 2rem; border-top: 1px solid rgba(0, 212, 255, 0.1); color: #718096;">
@@ -846,6 +888,10 @@
         
         // Contract list
         let contractList = [];
+        let currentContractId = null;
+        let lastUsedSource = '';
+        let lastUsedResource = '';
+        let currentViewMode = 'optimal';
         
         // Custom Destinations logic
         const CUSTOM_DESTINATIONS_KEY = 'sc_haulmaster_custom_destinations';
@@ -902,7 +948,6 @@
             loadConfiguration();
             setupTypeahead();
             setupSourceTypeahead();
-            setupDuplicatePrevention();
             setupAutoSave();
             updateBoxSizeDisplay();
             loadCustomDestinations();
@@ -1277,12 +1322,40 @@
             resultsDiv.style.display = 'block';
         }
         
-        function addContract() {
+        function startNewContract() {
+            currentContractId = Date.now();
+            // Clear destination and SCU, but keep source and resource as defaults
+            document.getElementById('destinationInput').value = '';
+            document.getElementById('destinationInput').dataset.selected = '';
+            document.getElementById('destinationInput').dataset.planetMoon = '';
+            document.getElementById('resourceSCU').value = '';
+            
+            // Set defaults for source and resource if we have them
+            if (lastUsedSource) {
+                // lastUsedSource now contains the complete name with planet/moon
+                const sourceInput = document.getElementById('sourceInput');
+                sourceInput.value = lastUsedSource;
+                // Extract just the location name for the dataset
+                const sourceName = lastUsedSource.split(' (')[0];
+                sourceInput.dataset.selected = sourceName;
+                // Extract planet/moon for the dataset
+                const planetMatch = lastUsedSource.match(/\(([^)]+)\)$/);
+                sourceInput.dataset.planetMoon = planetMatch ? planetMatch[1] : '';
+            }
+            if (lastUsedResource) {
+                document.getElementById('resourceInput').value = lastUsedResource;
+                document.getElementById('resourceInput').dataset.selected = lastUsedResource;
+            }
+            
+            // Update display to show the new contract
+            updateContractDisplay();
+        }
+        
+        function addContractItem() {
             const sourceInput = document.getElementById('sourceInput');
             const destinationInput = document.getElementById('destinationInput');
             const resourceInput = document.getElementById('resourceInput');
             const scuInput = document.getElementById('resourceSCU');
-            const preventDuplicates = document.getElementById('preventDuplicates');
             
             const source = sourceInput.value;
             const destination = destinationInput.value;
@@ -1307,6 +1380,11 @@
             if (!scu || scu < 1) {
                 alert('Please enter a valid SCU amount');
                 return;
+            }
+            
+            // If no current contract, start a new one
+            if (!currentContractId) {
+                currentContractId = Date.now();
             }
             
             // Get the planet/moon names for source and destination
@@ -1339,15 +1417,7 @@
             const fullSource = sourcePlanetMoon ? `${source} (${sourcePlanetMoon})` : source;
             const fullDestination = destPlanetMoon ? `${destination} (${destPlanetMoon})` : destination;
             
-            // Check for duplicates if prevention is enabled (same resource, source, AND destination)
-            if (preventDuplicates.checked && contractList.some(c => 
-                c.resource === resource && 
-                c.fullSource === fullSource && 
-                c.fullDestination === fullDestination
-            )) {
-                alert(`${resource} from ${fullSource} to ${fullDestination} is already in your contract list`);
-                return;
-            }
+
 
             // Check if locations are not in any known list, and add as custom if needed
             let sourceKnown = false;
@@ -1378,6 +1448,7 @@
             const optimization = optimizeStorage(scu);
             
             const contractItem = {
+                contractId: currentContractId,
                 source: source,
                 fullSource: fullSource,
                 sourcePlanetMoon: sourcePlanetMoon,
@@ -1392,14 +1463,14 @@
             
             contractList.push(contractItem);
             
-            // Clear inputs
-            sourceInput.value = '';
-            sourceInput.dataset.selected = '';
-            sourceInput.dataset.planetMoon = '';
+            // Store last used values for defaults
+            lastUsedSource = fullSource; // Store the complete source name with planet/moon
+            lastUsedResource = resource;
+            
+            // Clear only destination and SCU, keep source and resource for next item
             destinationInput.value = '';
             destinationInput.dataset.selected = '';
             destinationInput.dataset.planetMoon = '';
-            resourceInput.value = '';
             scuInput.value = '';
             
             updateContractDisplay();
@@ -1548,6 +1619,28 @@
             return cargo;
         }
         
+        function getSystemFromLocation(location) {
+            // Find which system this location belongs to
+            for (const [system, regions] of Object.entries(DESTINATIONS_HIERARCHICAL)) {
+                for (const [region, locations] of Object.entries(regions)) {
+                    if (locations.includes(location.split(' (')[0])) {
+                        return system;
+                    }
+                }
+            }
+            return 'Unknown';
+        }
+        
+        function getPlanetFromLocation(location) {
+            const match = location.match(/\(([^)]+)\)$/);
+            return match ? match[1] : 'Unknown';
+        }
+        
+        function changeViewMode() {
+            currentViewMode = document.getElementById('viewMode').value;
+            updateContractDisplay();
+        }
+        
         function updateContractDisplay() {
             const container = document.getElementById('resourceListContent');
             
@@ -1556,81 +1649,122 @@
                 return;
             }
             
-            // Get optimized route
-            const optimizedRoute = optimizeRoute();
+            let html = '';
             
-            // Create route display
-            let html = '<div class="section">';
-            html += '<h3>🚛 Optimized Route (Planet-Based)</h3>';
-            
-            if (optimizedRoute.length > 0) {
-                html += '<div class="route-container">';
+            // Show optimized route only in optimal view
+            if (currentViewMode === 'optimal') {
+                const optimizedRoute = optimizeRoute();
+                html += '<div class="section">';
+                html += '<h3>🚛 Optimized Route (Planet-Based)</h3>';
                 
-                // Extract planet from location
-                function getPlanet(loc) {
-                    const match = loc.match(/\(([^)]+)\)$/);
-                    return match ? match[1] : 'Unknown';
+                if (optimizedRoute.length > 0) {
+                    html += '<div class="route-container">';
+                    
+                    // Extract planet from location
+                    function getPlanet(loc) {
+                        const match = loc.match(/\(([^)]+)\)$/);
+                        return match ? match[1] : 'Unknown';
+                    }
+                    
+                    let currentPlanet = null;
+                    optimizedRoute.forEach((location, index) => {
+                        const planet = getPlanet(location);
+                        const isNewPlanet = planet !== currentPlanet;
+                        currentPlanet = planet;
+                        
+                        const cargo = calculateCargoAtLocation(location, optimizedRoute);
+                        const cargoHtml = Object.entries(cargo).map(([resource, amount]) => {
+                            const sign = amount > 0 ? '+' : '';
+                            const color = amount > 0 ? '#00d4ff' : '#ff6b6b';
+                            return `<span style="color: ${color}; font-weight: 600;">${sign}${amount} SCU ${resource}</span>`;
+                        }).join(', ');
+                        
+                        html += `
+                            <div class="route-step ${isNewPlanet ? 'new-planet' : ''}">
+                                <div class="route-step-number">${index + 1}</div>
+                                <div class="route-step-location">
+                                    ${location}
+                                    ${isNewPlanet ? `<div class="planet-indicator">🌍 ${planet}</div>` : ''}
+                                </div>
+                                <div class="route-step-cargo">${cargoHtml || 'No cargo change'}</div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
                 }
                 
-                let currentPlanet = null;
-                optimizedRoute.forEach((location, index) => {
-                    const planet = getPlanet(location);
-                    const isNewPlanet = planet !== currentPlanet;
-                    currentPlanet = planet;
-                    
-                    const cargo = calculateCargoAtLocation(location, optimizedRoute);
-                    const cargoHtml = Object.entries(cargo).map(([resource, amount]) => {
-                        const sign = amount > 0 ? '+' : '';
-                        const color = amount > 0 ? '#00d4ff' : '#ff6b6b';
-                        return `<span style="color: ${color}; font-weight: 600;">${sign}${amount} SCU ${resource}</span>`;
-                    }).join(', ');
-                    
-                    html += `
-                        <div class="route-step ${isNewPlanet ? 'new-planet' : ''}">
-                            <div class="route-step-number">${index + 1}</div>
-                            <div class="route-step-location">
-                                ${location}
-                                ${isNewPlanet ? `<div class="planet-indicator">🌍 ${planet}</div>` : ''}
-                            </div>
-                            <div class="route-step-cargo">${cargoHtml || 'No cargo change'}</div>
-                        </div>
-                    `;
-                });
                 html += '</div>';
             }
             
-            html += '</div>';
+            // Group contracts based on view mode
+            let groupedContracts = {};
             
-            // Group contracts by source and destination
-            const groupedContracts = contractList.reduce((groups, contract) => {
-                const key = `${contract.fullSource} → ${contract.fullDestination}`;
-                if (!groups[key]) {
-                    groups[key] = [];
-                }
-                groups[key].push(contract);
-                return groups;
-            }, {});
+            if (currentViewMode === 'contract') {
+                // Group by contract ID
+                groupedContracts = contractList.reduce((groups, contract) => {
+                    const contractId = contract.contractId;
+                    if (!groups[contractId]) {
+                        groups[contractId] = [];
+                    }
+                    groups[contractId].push(contract);
+                    return groups;
+                }, {});
+            } else if (currentViewMode === 'orbit') {
+                // Group by orbit (system)
+                groupedContracts = contractList.reduce((groups, contract) => {
+                    const sourceSystem = getSystemFromLocation(contract.fullSource);
+                    const destSystem = getSystemFromLocation(contract.fullDestination);
+                    const key = `${sourceSystem} → ${destSystem}`;
+                    if (!groups[key]) {
+                        groups[key] = [];
+                    }
+                    groups[key].push(contract);
+                    return groups;
+                }, {});
+            } else if (currentViewMode === 'planet') {
+                // Group by planet
+                groupedContracts = contractList.reduce((groups, contract) => {
+                    const sourcePlanet = getPlanetFromLocation(contract.fullSource);
+                    const destPlanet = getPlanetFromLocation(contract.fullDestination);
+                    const key = `${sourcePlanet} → ${destPlanet}`;
+                    if (!groups[key]) {
+                        groups[key] = [];
+                    }
+                    groups[key].push(contract);
+                    return groups;
+                }, {});
+            } else {
+                // Default: group by source and destination
+                groupedContracts = contractList.reduce((groups, contract) => {
+                    const key = `${contract.fullSource} → ${contract.fullDestination}`;
+                    if (!groups[key]) {
+                        groups[key] = [];
+                    }
+                    groups[key].push(contract);
+                    return groups;
+                }, {});
+            }
             
             // Sort contracts
             const sortedContracts = Object.keys(groupedContracts).sort();
             
-            sortedContracts.forEach(routeKey => {
-                const contracts = groupedContracts[routeKey];
+            sortedContracts.forEach(groupKey => {
+                const contracts = groupedContracts[groupKey];
                 
-                // Calculate route totals
-                const routeTotalSCU = contracts.reduce((sum, c) => sum + c.scu, 0);
-                const routeTotalBoxes = contracts.reduce((sum, c) => sum + (c.optimization ? c.optimization.total : 0), 0);
+                // Calculate group totals
+                const groupTotalSCU = contracts.reduce((sum, c) => sum + c.scu, 0);
+                const groupTotalBoxes = contracts.reduce((sum, c) => sum + (c.optimization ? c.optimization.total : 0), 0);
                 const validOptimizations = contracts.filter(c => c.optimization);
-                const routeAvgEfficiency = validOptimizations.length > 0 
+                const groupAvgEfficiency = validOptimizations.length > 0 
                     ? validOptimizations.reduce((sum, c) => sum + c.optimization.efficiency, 0) / validOptimizations.length
                     : 0;
                 
                 html += `
                     <div class="destination-group">
                         <div class="destination-header">
-                            <h4>${routeKey}</h4>
+                            <h4>${groupKey}</h4>
                             <div class="destination-stats">
-                                ${routeTotalSCU} SCU • ${routeTotalBoxes} boxes • ${routeAvgEfficiency.toFixed(1)}% avg efficiency
+                                ${groupTotalSCU} SCU • ${groupTotalBoxes} boxes • ${groupAvgEfficiency.toFixed(1)}% avg efficiency
                             </div>
                         </div>
                 `;
@@ -1666,6 +1800,7 @@
                             <div class="resource-info">
                                 <div class="resource-name">${contract.resource}</div>
                                 <div class="resource-scu">${contract.scu} SCU</div>
+                                <div class="resource-route">${contract.fullSource} → ${contract.fullDestination}</div>
                                 ${optimizationHtml}
                             </div>
                             <div class="resource-actions">
@@ -1718,28 +1853,134 @@
         });
         
         document.getElementById('resourceSCU').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') addContract();
+            if (e.key === 'Enter') addContractItem();
         });
         
-        function setupDuplicatePrevention() {
-            const checkbox = document.getElementById('preventDuplicates');
-            const status = document.getElementById('duplicateStatus');
+        function showHelp() {
+            const helpContent = `
+                <div style="max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #00d4ff; margin-bottom: 20px;">📦 How to Use SC Haulmaster</h2>
+                    
+                    <div style="background: rgba(0, 212, 255, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(0, 212, 255, 0.3);">
+                        <h3 style="color: #00d4ff; margin-top: 0;">Perfect for organizing multiple delivery contracts with planet-based route optimization!</h3>
+                        <p>When you have several contracts and want to minimize interplanetary travel:</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="color: #e0e6ed;">Step-by-Step Guide:</h3>
+                        <ol style="margin: 10px 0; padding-left: 20px; line-height: 1.6;">
+                            <li><strong>Add Your Contracts:</strong> For each contract, specify the source, destination, resource, and SCU amount</li>
+                            <li><strong>Review the Route:</strong> The tool automatically groups all deliveries to each planet together</li>
+                            <li><strong>Check Cargo Flow:</strong> See exactly what cargo you'll be carrying at each step</li>
+                            <li><strong>Organize Your Grid:</strong> Use the box breakdown to prepare cargo for each contract</li>
+                        </ol>
+                    </div>
+                    
+                    <div style="background: rgba(255, 193, 7, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(255, 193, 7, 0.3);">
+                        <h3 style="color: #ffc107; margin-top: 0;">⚠️ Important Cargo Loading Tip</h3>
+                        <p><strong>Load each contract onto the elevator separately!</strong> This ensures proper distribution to the various stacks on the grid. Don't try to load all contracts at once - the game's cargo system works best when you load contracts individually.</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="color: #e0e6ed;">Pro Tips:</h3>
+                        <ul style="margin: 10px 0; padding-left: 20px; line-height: 1.6;">
+                            <li><strong>Route Optimization:</strong> The tool groups all locations on the same planet together to minimize interplanetary travel costs</li>
+                            <li><strong>Red Borders:</strong> Indicate planet changes in the route display</li>
+                            <li><strong>Transfer Points:</strong> Locations that are both sources and destinations are prioritized in the route</li>
+                            <li><strong>Multiple View Modes:</strong> Use different view options to organize your contracts as needed</li>
+                            <li><strong>Smart Defaults:</strong> Source and resource fields remember your last used values for faster contract entry</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="background: rgba(0, 212, 255, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 212, 255, 0.3);">
+                        <h3 style="color: #00d4ff; margin-top: 0;">✅ Updated Destination Database</h3>
+                        <p><strong>Fresh from <a href="https://uexcorp.space/resources/home/type/outposts/" target="_blank" rel="noopener" style="color: #00d4ff; text-decoration: none;">UEXcorp</a>!</strong> This destination list is current as of Star Citizen 4.1.1 LIVE and includes:</p>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li><strong>Cargo Elevator Locations Only:</strong> All destinations have cargo elevators for delivery</li>
+                            <li><strong>Stanton System:</strong> Major landing zones, stations, Lagrange points, and outposts with cargo terminals</li>
+                            <li><strong>Pyro System:</strong> Alpha 4.0 outposts across Bloom, Monox, Terminus, and other moons</li>
+                            <li><strong>100+ Deliverable Locations:</strong> Every location supports cargo delivery via elevators</li>
+                        </ul>
+                        <p>Type any location name to search, or enter custom destinations manually!</p>
+                    </div>
+                </div>
+            `;
             
-            // Set initial status
-            updateDuplicateStatus();
+            // Create modal
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                padding: 20px;
+                box-sizing: border-box;
+            `;
             
-            // Listen for changes
-            checkbox.addEventListener('change', updateDuplicateStatus);
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background: rgba(26, 35, 50, 0.95);
+                border-radius: 12px;
+                padding: 30px;
+                max-width: 90%;
+                max-height: 90%;
+                overflow-y: auto;
+                border: 1px solid rgba(0, 212, 255, 0.3);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(10px);
+            `;
             
-            function updateDuplicateStatus() {
-                if (checkbox.checked) {
-                    status.textContent = '✓ Active';
-                    status.className = 'duplicate-status active';
-                } else {
-                    status.textContent = '⚠ Inactive';
-                    status.className = 'duplicate-status inactive';
+            modalContent.innerHTML = helpContent;
+            
+            // Add close button
+            const closeButton = document.createElement('button');
+            closeButton.textContent = '✕';
+            closeButton.style.cssText = `
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                background: rgba(220, 53, 69, 0.8);
+                border: none;
+                color: white;
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                cursor: pointer;
+                font-size: 16px;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                line-height: 1;
+                padding: 0;
+            `;
+            closeButton.onclick = () => document.body.removeChild(modal);
+            
+            modalContent.appendChild(closeButton);
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+            
+            // Close on background click
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    document.body.removeChild(modal);
                 }
-            }
+            };
+            
+            // Close on Escape key
+            const handleEscape = (e) => {
+                if (e.key === 'Escape') {
+                    document.body.removeChild(modal);
+                    document.removeEventListener('keydown', handleEscape);
+                }
+            };
+            document.addEventListener('keydown', handleEscape);
         }
         
         function setupAutoSave() {
@@ -2013,7 +2254,9 @@
             }
             
             function selectDestination(dest, planetMoon = '') {
-                input.value = dest;
+                // Store the complete destination name with planet/moon
+                const completeDestination = planetMoon ? `${dest} (${planetMoon})` : dest;
+                input.value = completeDestination;
                 input.dataset.selected = dest;
                 input.dataset.planetMoon = planetMoon;
                 hideDropdown();
@@ -2196,7 +2439,9 @@
             }
             
             function selectSource(source, planetMoon = '') {
-                input.value = source;
+                // Store the complete source name with planet/moon
+                const completeSource = planetMoon ? `${source} (${planetMoon})` : source;
+                input.value = completeSource;
                 input.dataset.selected = source;
                 input.dataset.planetMoon = planetMoon;
                 hideDropdown();
