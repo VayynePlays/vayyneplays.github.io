@@ -3,11 +3,7 @@
   "total_destinations": 331,
   "hierarchical": {
     "Pyro": {
-      "Pyro I": [
-        "Gray Gardens Depot",
-        "Rustville",
-        "Stag's Rut"
-      ],
+      "Pyro I": ["Gray Gardens Depot", "Rustville", "Stag's Rut"],
       "Monox": [
         "Arid Reach",
         "Jackson's Swap",
@@ -54,64 +50,25 @@
         "Scarper's Turn",
         "Stonetree"
       ],
-      "Pyro I Lagrange Point 2": [
-        "PYAM-FARSTAT-1-2"
-      ],
-      "Pyro I Lagrange Point 3": [
-        "PYAM-FARSTAT-1-3"
-      ],
-      "Pyro I Lagrange Point 5": [
-        "PYAM-FARSTAT-1-5"
-      ],
-      "Pyro II Lagrange Point 4": [
-        "Checkmate Station"
-      ],
-      "Bloom Lagrange Point 1": [
-        "Starlight Service Station"
-      ],
-      "Bloom Lagrange Point 3": [
-        "Patch City"
-      ],
-      "Bloom Lagrange Point 5": [
-        "PYAM-FARSTAT-3-5",
-        "PYAM-SUPVISR-3-5"
-      ],
-      "Pyro V Lagrange Point 1": [
-        "PYAM-FARSTAT-5-1"
-      ],
-      "Pyro V Lagrange Point 3": [
-        "PYAM-FARSTAT-5-3"
-      ],
-      "Pyro V Lagrange Point 4": [
-        "Rod's Fuel 'N Supplies"
-      ],
-      "Pyro V Lagrange Point 5": [
-        "Rat's Nest"
-      ],
-      "Pyro VI Lagrange Point 2": [
-        "PYAM-FARSTAT-6-2"
-      ],
-      "Pyro VI Lagrange Point 3": [
-        "Endgame"
-      ],
-      "Pyro VI Lagrange Point 4": [
-        "Dudley & Daughters"
-      ],
-      "Pyro VI Lagrange Point 5": [
-        "Megumi Refueling"
-      ],
-      "Pyro V Lagrange Point 2": [
-        "Gaslight"
-      ],
-      "Monox Lagrange Point 3": [
-        "PYAM-FARSTAT-2-3"
-      ],
-      "Bloom Lagrange Point 4": [
-        "PYAM-SUPVISR-3-4"
-      ],
-      "Pyro (Star)": [
-        "Stanton Gateway"
-      ]
+      "Pyro I Lagrange Point 2": ["PYAM-FARSTAT-1-2"],
+      "Pyro I Lagrange Point 3": ["PYAM-FARSTAT-1-3"],
+      "Pyro I Lagrange Point 5": ["PYAM-FARSTAT-1-5"],
+      "Pyro II Lagrange Point 4": ["Checkmate Station"],
+      "Bloom Lagrange Point 1": ["Starlight Service Station"],
+      "Bloom Lagrange Point 3": ["Patch City"],
+      "Bloom Lagrange Point 5": ["PYAM-FARSTAT-3-5", "PYAM-SUPVISR-3-5"],
+      "Pyro V Lagrange Point 1": ["PYAM-FARSTAT-5-1"],
+      "Pyro V Lagrange Point 3": ["PYAM-FARSTAT-5-3"],
+      "Pyro V Lagrange Point 4": ["Rod's Fuel 'N Supplies"],
+      "Pyro V Lagrange Point 5": ["Rat's Nest"],
+      "Pyro VI Lagrange Point 2": ["PYAM-FARSTAT-6-2"],
+      "Pyro VI Lagrange Point 3": ["Endgame"],
+      "Pyro VI Lagrange Point 4": ["Dudley & Daughters"],
+      "Pyro VI Lagrange Point 5": ["Megumi Refueling"],
+      "Pyro V Lagrange Point 2": ["Gaslight"],
+      "Monox Lagrange Point 3": ["PYAM-FARSTAT-2-3"],
+      "Bloom Lagrange Point 4": ["PYAM-SUPVISR-3-4"],
+      "Pyro (Star)": ["Stanton Gateway"]
     },
     "Stanton": {
       "ArcCorp": [
@@ -266,9 +223,7 @@
         "HDES-Dobbs (NA)",
         "Klescher Rehabilitation Facility"
       ],
-      "Arial": [
-        "Comm Array ST1-13"
-      ],
+      "Arial": ["Comm Array ST1-13"],
       "Calliope": [
         "Comm Array ST4-31",
         "Shubin Mining Facility SMCA-6",
@@ -287,15 +242,12 @@
         "Mogote Aid Shelter",
         "NT-999-XV",
         "Private Property",
+        "Rayari, Inc",
         "Security Post Criska",
         "Security Post Dipur",
         "Security Post Lespin"
       ],
-      "Clio": [
-        "Comm Array ST4-59",
-        "Kant's Peak",
-        "Tremonte"
-      ],
+      "Clio": ["Comm Array ST4-59", "Kant's Peak", "Tremonte"],
       "Daymar": [
         "Comm Array ST2-47",
         "Dunlow Ridge Aid Shelter",
@@ -311,13 +263,8 @@
         "The Garden",
         "Wolf Point Aid Shelter"
       ],
-      "Euterpe": [
-        "Comm Array ST4-64",
-        "The Icebreaker"
-      ],
-      "Ita": [
-        "Comm Array ST1-02"
-      ],
+      "Euterpe": ["Comm Array ST4-64", "The Icebreaker"],
+      "Ita": ["Comm Array ST1-02"],
       "Lyria": [
         "Buckets",
         "Comm Array ST3-18",
@@ -327,9 +274,7 @@
         "The Pit",
         "Wheelers"
       ],
-      "Magda": [
-        "Comm Array ST1-48"
-      ],
+      "Magda": ["Comm Array ST1-48"],
       "Wala": [
         "Arccorp Processing Center 115",
         "Arccorp Processing Center 123",
@@ -350,6 +295,7 @@
         "NT-999-XX",
         "NT-999-XXII",
         "Nakamura Valley Aid Shelter",
+        "Rayari, Inc",
         "Security Post Opal",
         "Security Post Wan",
         "Talarine Divide Aid Shelter",
@@ -395,70 +341,30 @@
         "Mining Claim #W80-8T2",
         "Mining Claim #X79-361"
       ],
-      "ArcCorp Lagrange Point 1": [
-        "ARC-L1 Wide Forest Station"
-      ],
-      "ArcCorp Lagrange Point 2": [
-        "ARC-L2 Lively Pathway Station"
-      ],
-      "ArcCorp Lagrange Point 3": [
-        "ARC-L3 Modern Express Station"
-      ],
-      "ArcCorp Lagrange Point 4": [
-        "ARC-L4 Faint Glen Station"
-      ],
-      "ArcCorp Lagrange Point 5": [
-        "ARC-L5 Yellow Core Station"
-      ],
-      "Crusader Lagrange Point 1": [
-        "CRU-L1 Ambitious Dream Station"
-      ],
-      "Crusader Lagrange Point 4": [
-        "CRU-L4 Shallow Fields Station"
-      ],
-      "Crusader Lagrange Point 5": [
-        "CRU-L5 Beautiful Glen Station"
-      ],
-      "Hurston Lagrange Point 1": [
-        "HUR-L1 Green Glade Station"
-      ],
-      "Hurston Lagrange Point 2": [
-        "HUR-L2 Faithful Dream Station"
-      ],
-      "Hurston Lagrange Point 3": [
-        "HUR-L3 Thundering Express Station"
-      ],
-      "Hurston Lagrange Point 4": [
-        "HUR-L4 Melodic Fields Station"
-      ],
-      "Hurston Lagrange Point 5": [
-        "HUR-L5 High Course Station"
-      ],
+      "ArcCorp Lagrange Point 1": ["ARC-L1 Wide Forest Station"],
+      "ArcCorp Lagrange Point 2": ["ARC-L2 Lively Pathway Station"],
+      "ArcCorp Lagrange Point 3": ["ARC-L3 Modern Express Station"],
+      "ArcCorp Lagrange Point 4": ["ARC-L4 Faint Glen Station"],
+      "ArcCorp Lagrange Point 5": ["ARC-L5 Yellow Core Station"],
+      "Crusader Lagrange Point 1": ["CRU-L1 Ambitious Dream Station"],
+      "Crusader Lagrange Point 4": ["CRU-L4 Shallow Fields Station"],
+      "Crusader Lagrange Point 5": ["CRU-L5 Beautiful Glen Station"],
+      "Hurston Lagrange Point 1": ["HUR-L1 Green Glade Station"],
+      "Hurston Lagrange Point 2": ["HUR-L2 Faithful Dream Station"],
+      "Hurston Lagrange Point 3": ["HUR-L3 Thundering Express Station"],
+      "Hurston Lagrange Point 4": ["HUR-L4 Melodic Fields Station"],
+      "Hurston Lagrange Point 5": ["HUR-L5 High Course Station"],
       "microTech Lagrange Point 1": [
         "INS Jericho",
         "MIC-L1 Shallow Frontier Station"
       ],
-      "microTech Lagrange Point 2": [
-        "MIC-L2 Long Forest Station"
-      ],
-      "microTech Lagrange Point 3": [
-        "MIC-L3 Endless Odyssey Station"
-      ],
-      "microTech Lagrange Point 4": [
-        "MIC-L4 Red Crossroads Station"
-      ],
-      "microTech Lagrange Point 5": [
-        "MIC-L5 Modern Icarus Station"
-      ],
-      "Pyro Jump Point": [
-        "Pyro Gateway"
-      ],
-      "Magnus Jump Point": [
-        "Magnus Gateway"
-      ],
-      "Terra Jump Point": [
-        "Terra Gateway"
-      ],
+      "microTech Lagrange Point 2": ["MIC-L2 Long Forest Station"],
+      "microTech Lagrange Point 3": ["MIC-L3 Endless Odyssey Station"],
+      "microTech Lagrange Point 4": ["MIC-L4 Red Crossroads Station"],
+      "microTech Lagrange Point 5": ["MIC-L5 Modern Icarus Station"],
+      "Pyro Jump Point": ["Pyro Gateway"],
+      "Magnus Jump Point": ["Magnus Gateway"],
+      "Terra Jump Point": ["Terra Gateway"],
       "Lundefined": [
         "Wikelo Emporium Dasi Station",
         "Wikelo Emporium Kinga Station",
