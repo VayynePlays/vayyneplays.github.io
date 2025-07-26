@@ -15,7 +15,7 @@ A comprehensive cargo optimization tool for Star Citizen. Features include:
 - Profit calculations
 - Ship capacity management
 
-**Live Demo:** [SC Haulmaster](https://vayyneplays.github.io/sc_cargo_optimizer.html)
+**Live Demo:** [SC Haulmaster](https://vayyneplays.github.io/sc_haulmaster.html)
 
 ## 🛠️ Technologies Used
 

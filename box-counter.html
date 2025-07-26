@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Cargo Share</title>
+  <meta name="theme-color" content="#0f1419">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f1419 0%, #1a2332 100%);
+      color: #e0e6ed;
+      min-height: 100vh;
+      margin: 0;
+      padding: 10px;
+    }
+    .container {
+      background: rgba(26, 35, 50, 0.9);
+      border-radius: 12px;
+      padding: 24px 18px 18px 18px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-width: 420px;
+      margin: 32px auto 0 auto;
+    }
+    h1 {
+      text-align: center;
+      color: #00d4ff;
+      margin: 0 0 20px 0;
+      font-size: 2em;
+      text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+    }
+    .scu-total {
+      background: #112b3c;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .scu-total-value {
+      font-size: 2.2em;
+      font-weight: bold;
+      color: #00d4ff;
+    }
+    .scu-total-label {
+      color: #a0aec0;
+      font-size: 1em;
+    }
+    .box-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .box-btn {
+      background: linear-gradient(135deg, #00d4ff, #0099cc);
+      color: #fff;
+      font-weight: 600;
+      font-size: 1.1em;
+      border: none;
+      border-radius: 8px;
+      padding: 16px 0;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .box-btn:hover {
+      background: linear-gradient(135deg, #0099cc, #00d4ff);
+    }
+    .totals-section {
+      background: rgba(15, 20, 25, 0.6);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 24px;
+      border: 1px solid rgba(0, 212, 255, 0.2);
+    }
+    .totals-title {
+      font-weight: 600;
+      color: #00d4ff;
+      margin-bottom: 8px;
+    }
+    .totals-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 1em;
+    }
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      color: #e0e6ed;
+    }
+    .totals-empty {
+      color: #718096;
+      grid-column: span 2;
+      text-align: center;
+      padding: 8px 0;
+    }
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .action-btn {
+      flex: 1;
+      background: #ff9800;
+      color: #fff;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 0;
+      cursor: pointer;
+      font-size: 1em;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .action-btn:disabled {
+      background: #444c5e;
+      color: #a0aec0;
+      cursor: not-allowed;
+    }
+    .reset-btn {
+      background: #e53935;
+    }
+    .reset-btn:hover {
+      background: #b71c1c;
+    }
+    .split-toggle {
+      width: 100%;
+      background: #7c3aed;
+      color: #fff;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 0;
+      cursor: pointer;
+      font-size: 1em;
+      margin-bottom: 18px;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .split-toggle:hover {
+      background: #5b21b6;
+    }
+    .split-section {
+      background: #1e1932;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 0;
+      border: 1px solid #7c3aed44;
+    }
+    .split-title {
+      color: #7c3aed;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .split-pile {
+      background: #23263a;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #7c3aed22;
+    }
+    .split-pile-label {
+      font-weight: 600;
+      color: #00d4ff;
+    }
+    .split-pile-total {
+      font-size: 1em;
+      font-weight: bold;
+      color: #00d4ff;
+      float: right;
+    }
+    .split-pile-boxes {
+      color: #a0aec0;
+      font-size: 0.98em;
+      margin-top: 2px;
+    }
+    .split-diff {
+      text-align: center;
+      color: #7c3aed;
+      font-weight: 500;
+      font-size: 1em;
+      margin-top: 8px;
+    }
+    @media (max-width: 500px) {
+      .container { padding: 8px; }
+      h1 { font-size: 1.2em; }
+      #split-n-container label { display:block; margin-bottom:6px; }
+      #split-n-container { flex-direction:column; align-items:flex-start; }
+      #split-n { width:48px; font-size:1.1em; }
+      #split-n-minus, #split-n-plus { width:32px; height:32px; font-size:1.2em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Cargo Share</h1>
+    <div class="scu-total">
+      <div class="scu-total-value" id="scu-total">0 SCU</div>
+      <div class="scu-total-label">Total Storage</div>
+    </div>
+    <div class="box-buttons">
+      <button class="box-btn" data-scu="1">1 SCU</button>
+      <button class="box-btn" data-scu="2">2 SCU</button>
+      <button class="box-btn" data-scu="4">4 SCU</button>
+      <button class="box-btn" data-scu="8">8 SCU</button>
+      <button class="box-btn" data-scu="16">16 SCU</button>
+      <button class="box-btn" data-scu="24">24 SCU</button>
+      <button class="box-btn" data-scu="32">32 SCU</button>
+    </div>
+    <div class="totals-section">
+      <div class="totals-title">Box Counts:</div>
+      <div class="totals-list" id="totals-list">
+        <div class="totals-empty" id="totals-empty">No boxes added yet</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="action-btn" id="undo-btn" disabled>⟲ Undo</button>
+      <button class="action-btn reset-btn" id="reset-btn">Reset All</button>
+    </div>
+    <div style="margin-bottom: 12px;" id="split-n-container">
+      <label for="split-n" style="color:#7c3aed; font-weight:600; margin-right:8px;">Number of Piles:</label>
+      <div style="display:inline-flex; align-items:center; gap:6px;">
+        <button id="split-n-minus" type="button" style="width:36px;height:36px;font-size:1.5em;background:#23263a;color:#7c3aed;border:1px solid #7c3aed;border-radius:6px;cursor:pointer;">-</button>
+        <input type="number" id="split-n" min="2" max="10" value="2" style="width:60px; padding:10px 8px; border-radius:6px; border:1px solid #7c3aed; background:#23263a; color:#e0e6ed; font-size:1.2em; text-align:center;">
+        <button id="split-n-plus" type="button" style="width:36px;height:36px;font-size:1.5em;background:#23263a;color:#7c3aed;border:1px solid #7c3aed;border-radius:6px;cursor:pointer;">+</button>
+      </div>
+    </div>
+    <div class="split-section" id="split-section"></div>
+  </div>
+
+  <footer style="text-align: center; padding: 2rem 0; margin-top: 2rem; border-top: 1px solid rgba(0, 212, 255, 0.1); color: #718096;">
+    <p>&copy; 2025 VayynePlays. Built with ❤️ and lots of ☕</p>
+    <p style="margin-top: 0.5rem;">
+      <a href="star-citizen-tools.html" style="color: #00d4ff; text-decoration: none; font-weight: 500;">← Back to SC Tools</a>
+    </p>
+  </footer>
+  <script>
+    const boxTypes = [1, 2, 4, 8, 16, 24, 32];
+    let totals = { 1:0, 2:0, 4:0, 8:0, 16:0, 24:0, 32:0 };
+    let history = [];
+    let splitN = 2;
+
+    const scuTotalEl = document.getElementById('scu-total');
+    const totalsListEl = document.getElementById('totals-list');
+    const totalsEmptyEl = document.getElementById('totals-empty');
+    const undoBtn = document.getElementById('undo-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const splitSection = document.getElementById('split-section');
+    const splitNInput = document.getElementById('split-n');
+    const splitNMinus = document.getElementById('split-n-minus');
+    const splitNPlus = document.getElementById('split-n-plus');
+    const splitNContainer = document.getElementById('split-n-container');
+
+    function updateUI() {
+      // Update total SCU
+      const totalSCU = boxTypes.reduce((sum, scu) => sum + scu * totals[scu], 0);
+      scuTotalEl.textContent = totalSCU + ' SCU';
+      // Update box counts
+      totalsListEl.innerHTML = '';
+      let any = false;
+      boxTypes.forEach(scu => {
+        if (totals[scu] > 0) {
+          any = true;
+          const row = document.createElement('div');
+          row.className = 'totals-row';
+          row.innerHTML = `<span>${scu} SCU boxes:</span><span><b>${totals[scu]}</b></span>`;
+          totalsListEl.appendChild(row);
+        }
+      });
+      if (!any) {
+        totalsListEl.appendChild(totalsEmptyEl);
+        totalsEmptyEl.style.display = '';
+      } else {
+        totalsEmptyEl.style.display = 'none';
+      }
+      // Undo button
+      undoBtn.disabled = history.length === 0;
+      
+      // Split controls - enable/disable based on whether there are boxes
+      const hasBoxes = totalSCU > 0;
+      splitNInput.disabled = !hasBoxes;
+      splitNMinus.disabled = !hasBoxes;
+      splitNPlus.disabled = !hasBoxes;
+      
+      // Update split controls styling when disabled
+      if (!hasBoxes) {
+        splitNInput.style.opacity = '0.5';
+        splitNMinus.style.opacity = '0.5';
+        splitNPlus.style.opacity = '0.5';
+        splitNMinus.style.cursor = 'not-allowed';
+        splitNPlus.style.cursor = 'not-allowed';
+      } else {
+        splitNInput.style.opacity = '1';
+        splitNMinus.style.opacity = '1';
+        splitNPlus.style.opacity = '1';
+        splitNMinus.style.cursor = 'pointer';
+        splitNPlus.style.cursor = 'pointer';
+      }
+      
+      // Always render split if there are boxes
+      if (hasBoxes) {
+        renderSplit();
+      } else {
+        splitSection.innerHTML = '<div class="split-title" style="color:#718096;">Add boxes to see distribution</div>';
+      }
+    }
+
+    function addBox(scu) {
+      history.push({ ...totals });
+      totals[scu]++;
+      updateUI();
+    }
+    function undo() {
+      if (history.length > 0) {
+        totals = history.pop();
+        updateUI();
+      }
+    }
+    function reset() {
+      history = [];
+      totals = { 1:0, 2:0, 4:0, 8:0, 16:0, 24:0, 32:0 };
+      updateUI();
+    }
+
+    function calculateNPileSplit(n) {
+      const availableBoxes = [];
+      boxTypes.forEach(scu => {
+        for (let i = 0; i < totals[scu]; i++) availableBoxes.push(scu);
+      });
+      if (availableBoxes.length === 0) return null;
+      
+      // Calculate target SCU per pile
+      const totalSCU = availableBoxes.reduce((sum, box) => sum + box, 0);
+      const targetSCU = Math.floor(totalSCU / n);
+      
+      // Sort boxes descending
+      const boxesDesc = [...availableBoxes].sort((a, b) => b - a);
+      
+      // Initialize piles
+      const piles = Array.from({length: n}, () => []);
+      const pileTotals = Array(n).fill(0);
+      
+      // Step 1: Try to get each pile as close as possible to target SCU
+      let currentBoxIndex = 0;
+      while (currentBoxIndex < boxesDesc.length) {
+        // Find the pile with fewest SCU (or fewest boxes if tied)
+        let bestPile = 0;
+        let minSCU = pileTotals[0];
+        let minBoxCount = piles[0].length;
+        
+        for (let i = 1; i < n; i++) {
+          if (pileTotals[i] < minSCU || (pileTotals[i] === minSCU && piles[i].length < minBoxCount)) {
+            minSCU = pileTotals[i];
+            minBoxCount = piles[i].length;
+            bestPile = i;
+          }
+        }
+        
+        // Add the box to the best pile
+        piles[bestPile].push(boxesDesc[currentBoxIndex]);
+        pileTotals[bestPile] += boxesDesc[currentBoxIndex];
+        currentBoxIndex++;
+      }
+      
+      // Step 2: Balance box counts while maintaining SCU totals
+      let improved = true;
+      let iterations = 0;
+      while (improved && iterations < 100) {
+        improved = false;
+        iterations++;
+        
+        let pileCounts = piles.map(p => p.length);
+        let maxBoxes = Math.max(...pileCounts);
+        let minBoxes = Math.min(...pileCounts);
+        
+        if (maxBoxes - minBoxes <= 1) break;
+        
+        // Find pile with most boxes and pile with fewest boxes
+        let maxPileIdx = pileCounts.indexOf(maxBoxes);
+        let minPileIdx = pileCounts.indexOf(minBoxes);
+        
+        // Try to exchange boxes to even out counts
+        for (let i = 0; i < piles[maxPileIdx].length; i++) {
+          let boxFromMax = piles[maxPileIdx][i];
+          
+          // Look for exact match in min pile
+          for (let j = 0; j < piles[minPileIdx].length; j++) {
+            if (piles[minPileIdx][j] === boxFromMax) {
+              // Skip this swap, doesn't help
+              continue;
+            }
+          }
+          
+          // Look for combinations in min pile that equal this box
+          let combos = findCombinations(piles[minPileIdx], boxFromMax);
+          for (let combo of combos) {
+            if (combo.length > 1) {
+              // Exchange: 1 box from max pile for multiple from min pile
+              let newMaxPile = [...piles[maxPileIdx]];
+              let newMinPile = [...piles[minPileIdx]];
+              
+              // Remove box from max pile
+              newMaxPile.splice(i, 1);
+              // Add combo to max pile
+              newMaxPile.push(...combo);
+              
+              // Remove combo from min pile
+              for (let box of combo) {
+                let idx = newMinPile.indexOf(box);
+                if (idx !== -1) newMinPile.splice(idx, 1);
+              }
+              // Add single box to min pile
+              newMinPile.push(boxFromMax);
+              
+              // Check if this improves box count balance
+              let newMaxCount = newMaxPile.length;
+              let newMinCount = newMinPile.length;
+              if (Math.abs(newMaxCount - newMinCount) < Math.abs(piles[maxPileIdx].length - piles[minPileIdx].length)) {
+                piles[maxPileIdx] = newMaxPile;
+                piles[minPileIdx] = newMinPile;
+                improved = true;
+                break;
+              }
+            }
+          }
+          if (improved) break;
+          
+          // Try reverse: combinations in max pile that equal a box in min pile
+          for (let j = 0; j < piles[minPileIdx].length; j++) {
+            let boxFromMin = piles[minPileIdx][j];
+            let combos = findCombinations(piles[maxPileIdx], boxFromMin);
+            for (let combo of combos) {
+              if (combo.length > 1 && combo.length < piles[maxPileIdx].length) {
+                // Exchange: multiple boxes from max pile for 1 from min pile
+                let newMaxPile = [...piles[maxPileIdx]];
+                let newMinPile = [...piles[minPileIdx]];
+                
+                // Remove combo from max pile
+                for (let box of combo) {
+                  let idx = newMaxPile.indexOf(box);
+                  if (idx !== -1) newMaxPile.splice(idx, 1);
+                }
+                // Add single box to max pile
+                newMaxPile.push(boxFromMin);
+                
+                // Remove box from min pile
+                newMinPile.splice(j, 1);
+                // Add combo to min pile
+                newMinPile.push(...combo);
+                
+                // Check if this improves box count balance
+                let newMaxCount = newMaxPile.length;
+                let newMinCount = newMinPile.length;
+                if (Math.abs(newMaxCount - newMinCount) < Math.abs(piles[maxPileIdx].length - piles[minPileIdx].length)) {
+                  piles[maxPileIdx] = newMaxPile;
+                  piles[minPileIdx] = newMinPile;
+                  improved = true;
+                  break;
+                }
+              }
+            }
+            if (improved) break;
+          }
+          if (improved) break;
+        }
+      }
+      
+      // Recalculate pile totals
+      for (let i = 0; i < n; i++) {
+        pileTotals[i] = piles[i].reduce((sum, box) => sum + box, 0);
+      }
+      
+      // Step 3: Balance SCU distribution by donating from high to low piles
+      improved = true;
+      iterations = 0;
+      while (improved && iterations < 50) {
+        improved = false;
+        iterations++;
+        
+        let maxSCU = Math.max(...pileTotals);
+        let minSCU = Math.min(...pileTotals);
+        
+        if (maxSCU - minSCU <= 1) break;
+        
+        let maxPileIdx = pileTotals.indexOf(maxSCU);
+        let minPileIdx = pileTotals.indexOf(minSCU);
+        
+        // Try to find a box to donate from max to min pile
+        for (let i = 0; i < piles[maxPileIdx].length; i++) {
+          let boxToMove = piles[maxPileIdx][i];
+          
+          // Check if moving this box improves SCU balance
+          let newMaxSCU = pileTotals[maxPileIdx] - boxToMove;
+          let newMinSCU = pileTotals[minPileIdx] + boxToMove;
+          
+          if (Math.abs(newMaxSCU - newMinSCU) < Math.abs(maxSCU - minSCU)) {
+            // Move the box
+            piles[maxPileIdx].splice(i, 1);
+            piles[minPileIdx].push(boxToMove);
+            pileTotals[maxPileIdx] = newMaxSCU;
+            pileTotals[minPileIdx] = newMinSCU;
+            improved = true;
+            break;
+          }
+        }
+        
+        // If direct move didn't work, try swaps
+        if (!improved) {
+          for (let i = 0; i < piles[maxPileIdx].length; i++) {
+            for (let j = 0; j < piles[minPileIdx].length; j++) {
+              let box1 = piles[maxPileIdx][i];
+              let box2 = piles[minPileIdx][j];
+              
+              if (box1 > box2) {
+                // Check if swapping improves SCU balance
+                let newMaxSCU = pileTotals[maxPileIdx] - box1 + box2;
+                let newMinSCU = pileTotals[minPileIdx] - box2 + box1;
+                
+                if (Math.abs(newMaxSCU - newMinSCU) < Math.abs(maxSCU - minSCU)) {
+                  // Swap the boxes
+                  piles[maxPileIdx][i] = box2;
+                  piles[minPileIdx][j] = box1;
+                  pileTotals[maxPileIdx] = newMaxSCU;
+                  pileTotals[minPileIdx] = newMinSCU;
+                  improved = true;
+                  break;
+                }
+              }
+            }
+            if (improved) break;
+          }
+        }
+      }
+      
+      // Helper function to find combinations of boxes that sum to target SCU
+      function findCombinations(boxes, target) {
+        let results = [];
+        function backtrack(start, current, currentSum) {
+          if (currentSum === target) {
+            results.push([...current]);
+            return;
+          }
+          if (currentSum > target || start >= boxes.length) return;
+          
+          for (let i = start; i < boxes.length; i++) {
+            current.push(boxes[i]);
+            backtrack(i + 1, current, currentSum + boxes[i]);
+            current.pop();
+          }
+        }
+        backtrack(0, [], 0);
+        return results;
+      }
+      
+      return {
+        piles: piles.map(pile => pile.sort((a, b) => b - a)),
+        pileTotals,
+        pileCounts: piles.map(p => p.length),
+        scuDifference: Math.max(...pileTotals) - Math.min(...pileTotals),
+        boxDifference: Math.max(...piles.map(p=>p.length)) - Math.min(...piles.map(p=>p.length))
+      };
+    }
+    function renderSplit() {
+      const n = splitN;
+      const split = calculateNPileSplit(n);
+      if (!split) {
+        splitSection.innerHTML = '<div class="split-title">No split available</div>';
+        return;
+      }
+      let html = `<div class="split-title">Split into ${n} Piles:</div>`;
+      for (let i = 0; i < n; i++) {
+        html += `
+          <div class="split-pile">
+            <span class="split-pile-label">Pile ${i+1}</span>
+            <span class="split-pile-total">${split.pileTotals[i]} SCU</span>
+            <span style="float:right; color:#a0aec0; font-size:0.95em;">${split.pileCounts[i]} boxes</span>
+            <div class="split-pile-boxes">Boxes: ${split.piles[i].join(', ') || 'None'}</div>
+          </div>
+        `;
+      }
+      html += `<div class="split-diff">SCU Difference: ${split.scuDifference} &nbsp;|&nbsp; Box Count Difference: ${split.boxDifference}</div>`;
+      splitSection.innerHTML = html;
+    }
+    // Event listeners
+    document.querySelectorAll('.box-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        addBox(Number(btn.getAttribute('data-scu')));
+      });
+    });
+    undoBtn.addEventListener('click', undo);
+    resetBtn.addEventListener('click', reset);
+    splitNInput.addEventListener('input', function() {
+      let val = parseInt(splitNInput.value);
+      if (isNaN(val) || val < 2) val = 2;
+      if (val > 10) val = 10;
+      splitN = val;
+      splitNInput.value = val;
+      renderSplit();
+    });
+    splitNMinus.addEventListener('click', function() {
+      if (!splitNMinus.disabled) {
+        let val = parseInt(splitNInput.value) || 2;
+        if (val > 2) val--;
+        splitN = val;
+        splitNInput.value = val;
+        renderSplit();
+      }
+    });
+    splitNPlus.addEventListener('click', function() {
+      if (!splitNPlus.disabled) {
+        let val = parseInt(splitNInput.value) || 2;
+        if (val < 10) val++;
+        splitN = val;
+        splitNInput.value = val;
+        renderSplit();
+      }
+    });
+    // Initial UI
+    updateUI();
+  </script>
+</body>
+</html>
