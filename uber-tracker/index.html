@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="description" content="Track your Uber driving earnings, rides, and expenses">
     <meta name="theme-color" content="#0f172a">
     <title>Uber Driver Tracker</title>
@@ -10,309 +10,628 @@
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>body { overscroll-behavior: none; }</style>
-</head>
-<body>
-    <div id="root"></div>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        function UberDriverTracker() {
-            const [rides, setRides] = useState([]);
-            const [expenses, setExpenses] = useState([]);
-            const [showRideForm, setShowRideForm] = useState(false);
-            const [showExpenseForm, setShowExpenseForm] = useState(false);
-            const [view, setView] = useState('dashboard');
-
-            const [rideForm, setRideForm] = useState({
-                date: new Date().toISOString().split('T')[0],
-                time: new Date().toTimeString().slice(0, 5),
-                earnings: '', tip: '', miles: '', duration: '',
-                pickupArea: '', dropoffArea: '', notes: ''
-            });
-
-            const [expenseForm, setExpenseForm] = useState({
-                date: new Date().toISOString().split('T')[0],
-                type: 'gas', amount: '', notes: ''
-            });
-
-            useEffect(() => {
-                setRides(JSON.parse(localStorage.getItem('uberRides') || '[]'));
-                setExpenses(JSON.parse(localStorage.getItem('uberExpenses') || '[]'));
-            }, []);
-
-            useEffect(() => { localStorage.setItem('uberRides', JSON.stringify(rides)); }, [rides]);
-            useEffect(() => { localStorage.setItem('uberExpenses', JSON.stringify(expenses)); }, [expenses]);
-
-            const addRide = () => {
-                if (!rideForm.earnings) return;
-                setRides([{
-                    id: Date.now(), ...rideForm,
-                    earnings: parseFloat(rideForm.earnings) || 0,
-                    tip: parseFloat(rideForm.tip) || 0,
-                    miles: parseFloat(rideForm.miles) || 0,
-                    duration: parseFloat(rideForm.duration) || 0
-                }, ...rides]);
-                setRideForm({
-                    date: new Date().toISOString().split('T')[0],
-                    time: new Date().toTimeString().slice(0, 5),
-                    earnings: '', tip: '', miles: '', duration: '',
-                    pickupArea: '', dropoffArea: '', notes: ''
-                });
-                setShowRideForm(false);
-            };
-
-            const addExpense = () => {
-                if (!expenseForm.amount) return;
-                setExpenses([{
-                    id: Date.now(), ...expenseForm,
-                    amount: parseFloat(expenseForm.amount) || 0
-                }, ...expenses]);
-                setExpenseForm({
-                    date: new Date().toISOString().split('T')[0],
-                    type: 'gas', amount: '', notes: ''
-                });
-                setShowExpenseForm(false);
-            };
-
-            const stats = {
-                totalRides: rides.length,
-                totalEarnings: rides.reduce((s, r) => s + r.earnings + r.tip, 0),
-                totalMiles: rides.reduce((s, r) => s + r.miles, 0),
-                totalExpenses: expenses.reduce((s, e) => s + e.amount, 0),
-                avgPerRide: rides.length ? rides.reduce((s, r) => s + r.earnings + r.tip, 0) / rides.length : 0,
-                avgPerHour: rides.reduce((s, r) => s + r.duration, 0) ? 
-                    rides.reduce((s, r) => s + r.earnings + r.tip, 0) / (rides.reduce((s, r) => s + r.duration, 0) / 60) : 0
-            };
-            stats.netEarnings = stats.totalEarnings - stats.totalExpenses;
-
-            const dailyGoal = 200;
-            const today = new Date().toISOString().split('T')[0];
-            const todayRides = rides.filter(r => r.date === today);
-            const todayEarnings = todayRides.reduce((s, r) => s + r.earnings + r.tip, 0);
-            const goalProgress = (todayEarnings / dailyGoal) * 100;
-
-            const Icon = ({ icon, ...props }) => {
-                useEffect(() => { lucide.createIcons(); });
-                return React.createElement('i', { 'data-lucide': icon, ...props });
-            };
-
-            return (
-                <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4">
-                    <div className="max-w-6xl mx-auto pb-20">
-                        <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
-                            Uber Driver Tracker
-                        </h1>
-                        <p className="text-slate-400 mb-6">Track rides, earnings & expenses</p>
-
-                        <div className="flex gap-2 mb-6">
-                            {['dashboard', 'rides', 'expenses'].map(v => (
-                                <button key={v} onClick={() => setView(v)}
-                                    className={\`px-4 py-2 rounded-lg transition \${view === v ? 'bg-blue-600' : 'bg-slate-700 hover:bg-slate-600'}\`}>
-                                    {v.charAt(0).toUpperCase() + v.slice(1)}
-                                </button>
-                            ))}
-                        </div>
-
-                        {view === 'dashboard' && (
-                            <div className="space-y-6">
-                                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <Icon icon="target" className="w-6 h-6 text-green-400" />
-                                        <h2 className="text-xl font-semibold">Today's Goal: ${dailyGoal}</h2>
-                                    </div>
-                                    <div className="flex justify-between text-sm mb-2">
-                                        <span className="text-slate-400">Progress</span>
-                                        <span className="font-semibold">${todayEarnings.toFixed(2)} / ${dailyGoal}</span>
-                                    </div>
-                                    <div className="w-full bg-slate-700 rounded-full h-4 overflow-hidden">
-                                        <div className="h-full bg-gradient-to-r from-green-500 to-blue-500 transition-all"
-                                            style={{ width: \`\${Math.min(goalProgress, 100)}%\` }} />
-                                    </div>
-                                    <div className="flex justify-between text-sm mt-2">
-                                        <span className="text-slate-400">{todayRides.length} rides today</span>
-                                        <span className={goalProgress >= 100 ? 'text-green-400' : 'text-slate-400'}>
-                                            {goalProgress >= 100 ? '✓ Goal!' : \`\${(100-goalProgress).toFixed(0)}% to go\`}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
-                                        <Icon icon="dollar-sign" className="w-5 h-5 text-green-400 mb-2" />
-                                        <span className="text-slate-400 text-sm">Gross</span>
-                                        <p className="text-2xl font-bold">${stats.totalEarnings.toFixed(2)}</p>
-                                    </div>
-                                    <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
-                                        <Icon icon="trending-up" className="w-5 h-5 text-blue-400 mb-2" />
-                                        <span className="text-slate-400 text-sm">Net</span>
-                                        <p className="text-2xl font-bold">${stats.netEarnings.toFixed(2)}</p>
-                                    </div>
-                                    <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
-                                        <Icon icon="car" className="w-5 h-5 text-purple-400 mb-2" />
-                                        <span className="text-slate-400 text-sm">Rides</span>
-                                        <p className="text-2xl font-bold">{stats.totalRides}</p>
-                                    </div>
-                                    <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
-                                        <Icon icon="fuel" className="w-5 h-5 text-red-400 mb-2" />
-                                        <span className="text-slate-400 text-sm">Expenses</span>
-                                        <p className="text-2xl font-bold">${stats.totalExpenses.toFixed(2)}</p>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-4">
-                                    <button onClick={() => { setShowRideForm(true); setView('rides'); }}
-                                        className="flex-1 bg-green-600 hover:bg-green-700 py-4 rounded-xl font-semibold">
-                                        Log Ride
-                                    </button>
-                                    <button onClick={() => { setShowExpenseForm(true); setView('expenses'); }}
-                                        className="flex-1 bg-red-600 hover:bg-red-700 py-4 rounded-xl font-semibold">
-                                        Log Expense
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {view === 'rides' && (
-                            <div className="space-y-4">
-                                <button onClick={() => setShowRideForm(!showRideForm)}
-                                    className="w-full bg-green-600 hover:bg-green-700 py-3 rounded-xl font-semibold">
-                                    {showRideForm ? 'Cancel' : '+ Add Ride'}
-                                </button>
-
-                                {showRideForm && (
-                                    <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 space-y-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <input type="date" value={rideForm.date} onChange={e => setRideForm({...rideForm, date: e.target.value})}
-                                                className="bg-slate-700 rounded-lg px-4 py-2" />
-                                            <input type="time" value={rideForm.time} onChange={e => setRideForm({...rideForm, time: e.target.value})}
-                                                className="bg-slate-700 rounded-lg px-4 py-2" />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <input type="number" step="0.01" placeholder="Earnings ($)" value={rideForm.earnings}
-                                                onChange={e => setRideForm({...rideForm, earnings: e.target.value})}
-                                                className="bg-slate-700 rounded-lg px-4 py-2" />
-                                            <input type="number" step="0.01" placeholder="Tip ($)" value={rideForm.tip}
-                                                onChange={e => setRideForm({...rideForm, tip: e.target.value})}
-                                                className="bg-slate-700 rounded-lg px-4 py-2" />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <input type="number" step="0.1" placeholder="Miles" value={rideForm.miles}
-                                                onChange={e => setRideForm({...rideForm, miles: e.target.value})}
-                                                className="bg-slate-700 rounded-lg px-4 py-2" />
-                                            <input type="number" step="1" placeholder="Duration (min)" value={rideForm.duration}
-                                                onChange={e => setRideForm({...rideForm, duration: e.target.value})}
-                                                className="bg-slate-700 rounded-lg px-4 py-2" />
-                                        </div>
-                                        <input type="text" placeholder="Pickup Area" value={rideForm.pickupArea}
-                                            onChange={e => setRideForm({...rideForm, pickupArea: e.target.value})}
-                                            className="w-full bg-slate-700 rounded-lg px-4 py-2" />
-                                        <input type="text" placeholder="Dropoff Area" value={rideForm.dropoffArea}
-                                            onChange={e => setRideForm({...rideForm, dropoffArea: e.target.value})}
-                                            className="w-full bg-slate-700 rounded-lg px-4 py-2" />
-                                        <textarea placeholder="Notes" value={rideForm.notes}
-                                            onChange={e => setRideForm({...rideForm, notes: e.target.value})}
-                                            className="w-full bg-slate-700 rounded-lg px-4 py-2" rows="2" />
-                                        <button onClick={addRide} className="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg font-semibold">
-                                            Save Ride
-                                        </button>
-                                    </div>
-                                )}
-
-                                <div className="space-y-3">
-                                    {rides.map(ride => (
-                                        <div key={ride.id} className="bg-slate-800 rounded-xl p-4 border border-slate-700">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div>
-                                                    <p className="text-lg font-semibold text-green-400">
-                                                        ${(ride.earnings + ride.tip).toFixed(2)}
-                                                    </p>
-                                                    <p className="text-sm text-slate-400">{ride.date} {ride.time}</p>
-                                                </div>
-                                                <button onClick={() => setRides(rides.filter(r => r.id !== ride.id))}
-                                                    className="text-red-400 hover:text-red-300">
-                                                    <Icon icon="trash-2" className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                            {ride.pickupArea && <p className="text-sm text-slate-300">{ride.pickupArea} → {ride.dropoffArea}</p>}
-                                            <div className="flex gap-4 mt-2 text-xs text-slate-400">
-                                                {ride.miles > 0 && <span>{ride.miles} mi</span>}
-                                                {ride.duration > 0 && <span>{ride.duration} min</span>}
-                                                {ride.tip > 0 && <span className="text-green-400">+${ride.tip} tip</span>}
-                                            </div>
-                                            {ride.notes && <p className="text-sm text-slate-400 mt-2">{ride.notes}</p>}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {view === 'expenses' && (
-                            <div className="space-y-4">
-                                <button onClick={() => setShowExpenseForm(!showExpenseForm)}
-                                    className="w-full bg-red-600 hover:bg-red-700 py-3 rounded-xl font-semibold">
-                                    {showExpenseForm ? 'Cancel' : '+ Add Expense'}
-                                </button>
-
-                                {showExpenseForm && (
-                                    <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 space-y-4">
-                                        <input type="date" value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})}
-                                            className="w-full bg-slate-700 rounded-lg px-4 py-2" />
-                                        <select value={expenseForm.type} onChange={e => setExpenseForm({...expenseForm, type: e.target.value})}
-                                            className="w-full bg-slate-700 rounded-lg px-4 py-2">
-                                            <option value="gas">Gas</option>
-                                            <option value="maintenance">Maintenance</option>
-                                            <option value="insurance">Insurance</option>
-                                            <option value="carwash">Car Wash</option>
-                                            <option value="other">Other</option>
-                                        </select>
-                                        <input type="number" step="0.01" placeholder="Amount ($)" value={expenseForm.amount}
-                                            onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})}
-                                            className="w-full bg-slate-700 rounded-lg px-4 py-2" />
-                                        <textarea placeholder="Notes" value={expenseForm.notes}
-                                            onChange={e => setExpenseForm({...expenseForm, notes: e.target.value})}
-                                            className="w-full bg-slate-700 rounded-lg px-4 py-2" rows="2" />
-                                        <button onClick={addExpense} className="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg font-semibold">
-                                            Save Expense
-                                        </button>
-                                    </div>
-                                )}
-
-                                <div className="space-y-3">
-                                    {expenses.map(expense => (
-                                        <div key={expense.id} className="bg-slate-800 rounded-xl p-4 border border-slate-700">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <p className="text-lg font-semibold text-red-400">
-                                                        -${expense.amount.toFixed(2)}
-                                                    </p>
-                                                    <p className="text-sm text-slate-400">{expense.date}</p>
-                                                    <p className="text-sm text-slate-300 capitalize">{expense.type}</p>
-                                                    {expense.notes && <p className="text-sm text-slate-400 mt-1">{expense.notes}</p>}
-                                                </div>
-                                                <button onClick={() => setExpenses(expenses.filter(e => e.id !== expense.id))}
-                                                    className="text-red-400 hover:text-red-300">
-                                                    <Icon icon="trash-2" className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1a2332 100%);
+            color: #e0e6ed;
+            min-height: 100vh;
+            padding: 10px;
+            overscroll-behavior: none;
         }
 
-        ReactDOM.createRoot(document.getElementById('root')).render(<UberDriverTracker />);
-    </script>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding-bottom: 80px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #00d4ff;
+            margin: 20px 0 10px 0;
+            font-size: 2em;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .tagline {
+            color: #a0aec0;
+            font-size: 0.9em;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            background: rgba(26, 35, 50, 0.7);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            color: #a0aec0;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1em;
+        }
+
+        .tab.active {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            color: #00d4ff;
+        }
+
+        .view { display: none; }
+        .view.active { display: block; }
+
+        .card {
+            background: rgba(26, 35, 50, 0.9);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            margin-bottom: 15px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: rgba(15, 20, 25, 0.7);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid rgba(0, 212, 255, 0.15);
+        }
+
+        .stat-label {
+            color: #a0aec0;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #00d4ff;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(15, 20, 25, 0.7);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #00d4ff);
+            transition: width 0.3s;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary { background: #00d4ff; color: #0f1419; }
+        .btn-primary:hover { background: #00b8e6; }
+
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+
+        .btn-secondary { background: rgba(26, 35, 50, 0.9); color: #a0aec0; border: 1px solid rgba(0, 212, 255, 0.3); }
+        .btn-secondary:hover { background: rgba(26, 35, 50, 1); }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            color: #a0aec0;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(15, 20, 25, 0.7);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            color: #e0e6ed;
+            font-size: 1em;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .item {
+            background: rgba(15, 20, 25, 0.7);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid rgba(0, 212, 255, 0.15);
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .item-amount {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+
+        .item-amount.positive { color: #10b981; }
+        .item-amount.negative { color: #ef4444; }
+
+        .item-date {
+            color: #a0aec0;
+            font-size: 0.85em;
+        }
+
+        .item-details {
+            color: #a0aec0;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 5px;
+        }
+
+        .delete-btn:hover { color: #dc2626; }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 600px) {
+            .stat-grid { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            h1 { font-size: 1.5em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚗 Uber Driver Tracker</h1>
+            <p class="tagline">Track rides, earnings & expenses</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" data-view="dashboard">Dashboard</button>
+            <button class="tab" data-view="rides">Rides</button>
+            <button class="tab" data-view="tips">Tips</button>
+            <button class="tab" data-view="expenses">Expenses</button>
+        </div>
+
+        <!-- Dashboard View -->
+        <div id="dashboard" class="view active">
+            <div class="card">
+                <h3 style="color: #00d4ff; margin-bottom: 10px;">Today's Goal: $<span id="daily-goal">200</span></h3>
+                <div id="goal-progress" style="color: #a0aec0; margin-bottom: 5px;">$0.00 / $200</div>
+                <div class="progress-bar">
+                    <div id="goal-bar" class="progress-fill" style="width: 0%"></div>
+                </div>
+                <div id="goal-status" style="color: #a0aec0; font-size: 0.9em;">0 rides today</div>
+            </div>
+
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Gross Earnings</div>
+                    <div class="stat-value">$<span id="total-earnings">0.00</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Net Earnings</div>
+                    <div class="stat-value">$<span id="net-earnings">0.00</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Rides</div>
+                    <div class="stat-value"><span id="total-rides">0</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Expenses</div>
+                    <div class="stat-value">$<span id="total-expenses">0.00</span></div>
+                </div>
+            </div>
+
+            <button class="btn btn-success" onclick="showView('rides'); showForm('ride')">+ Log Ride</button>
+            <button class="btn btn-danger" onclick="showView('expenses'); showForm('expense')">+ Log Expense</button>
+        </div>
+
+        <!-- Rides View -->
+        <div id="rides" class="view">
+            <button class="btn btn-success" onclick="showForm('ride')">+ Add Ride</button>
+
+            <div id="ride-form" class="card hidden">
+                <h3 style="color: #00d4ff; margin-bottom: 15px;">New Ride</h3>
+                <form onsubmit="addRide(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="ride-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Time</label>
+                            <input type="time" id="ride-time" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Earnings ($)</label>
+                            <input type="number" step="0.01" id="ride-earnings" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tip ($)</label>
+                            <input type="number" step="0.01" id="ride-tip" value="0">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Miles</label>
+                            <input type="number" step="0.1" id="ride-miles">
+                        </div>
+                        <div class="form-group">
+                            <label>Duration (min)</label>
+                            <input type="number" id="ride-duration">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Pickup Area</label>
+                        <input type="text" id="ride-pickup">
+                    </div>
+                    <div class="form-group">
+                        <label>Dropoff Area</label>
+                        <input type="text" id="ride-dropoff">
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="ride-notes" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Ride</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideForm('ride')">Cancel</button>
+                </form>
+            </div>
+
+            <div id="ride-list" class="item-list"></div>
+        </div>
+
+        <!-- Tips View -->
+        <div id="tips" class="view">
+            <button class="btn btn-success" onclick="showForm('tip')">+ Add Tip</button>
+
+            <div id="tip-form" class="card hidden">
+                <h3 style="color: #00d4ff; margin-bottom: 15px;">New Tip</h3>
+                <form onsubmit="addTip(event)">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="tip-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Amount ($)</label>
+                        <input type="number" step="0.01" id="tip-amount" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="tip-notes" rows="2" placeholder="Optional - e.g., 'Cash tip from ride 3'"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Tip</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideForm('tip')">Cancel</button>
+                </form>
+            </div>
+
+            <div id="tip-list" class="item-list"></div>
+        </div>
+
+        <!-- Expenses View -->
+        <div id="expenses" class="view">
+            <button class="btn btn-danger" onclick="showForm('expense')">+ Add Expense</button>
+
+            <div id="expense-form" class="card hidden">
+                <h3 style="color: #00d4ff; margin-bottom: 15px;">New Expense</h3>
+                <form onsubmit="addExpense(event)">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="expense-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="expense-type" required>
+                            <option value="gas">Gas</option>
+                            <option value="maintenance">Maintenance</option>
+                            <option value="insurance">Insurance</option>
+                            <option value="carwash">Car Wash</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Amount ($)</label>
+                        <input type="number" step="0.01" id="expense-amount" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="expense-notes" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Expense</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideForm('expense')">Cancel</button>
+                </form>
+            </div>
+
+            <div id="expense-list" class="item-list"></div>
+        </div>
+    </div>
+
     <script>
+        let rides = JSON.parse(localStorage.getItem('uberRides') || '[]');
+        let tips = JSON.parse(localStorage.getItem('uberTips') || '[]');
+        let expenses = JSON.parse(localStorage.getItem('uberExpenses') || '[]');
+
+        // Initialize dates
+        const today = new Date().toISOString().split('T')[0];
+        const now = new Date().toTimeString().slice(0, 5);
+        document.getElementById('ride-date').value = today;
+        document.getElementById('ride-time').value = now;
+        document.getElementById('tip-date').value = today;
+        document.getElementById('expense-date').value = today;
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.view).classList.add('active');
+            });
+        });
+
+        function showView(view) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelector(`[data-view="${view}"]`).classList.add('active');
+            document.getElementById(view).classList.add('active');
+        }
+
+        function showForm(type) {
+            document.getElementById(`${type}-form`).classList.remove('hidden');
+        }
+
+        function hideForm(type) {
+            document.getElementById(`${type}-form`).classList.add('hidden');
+        }
+
+        function addRide(e) {
+            e.preventDefault();
+            const ride = {
+                id: Date.now(),
+                date: document.getElementById('ride-date').value,
+                time: document.getElementById('ride-time').value,
+                earnings: parseFloat(document.getElementById('ride-earnings').value) || 0,
+                tip: parseFloat(document.getElementById('ride-tip').value) || 0,
+                miles: parseFloat(document.getElementById('ride-miles').value) || 0,
+                duration: parseInt(document.getElementById('ride-duration').value) || 0,
+                pickup: document.getElementById('ride-pickup').value,
+                dropoff: document.getElementById('ride-dropoff').value,
+                notes: document.getElementById('ride-notes').value
+            };
+            rides.unshift(ride);
+            localStorage.setItem('uberRides', JSON.stringify(rides));
+            e.target.reset();
+            document.getElementById('ride-date').value = today;
+            document.getElementById('ride-time').value = new Date().toTimeString().slice(0, 5);
+            hideForm('ride');
+            renderRides();
+            updateStats();
+        }
+
+        function deleteRide(id) {
+            if (confirm('Delete this ride?')) {
+                rides = rides.filter(r => r.id !== id);
+                localStorage.setItem('uberRides', JSON.stringify(rides));
+                renderRides();
+                updateStats();
+            }
+        }
+
+        function addTip(e) {
+            e.preventDefault();
+            const tip = {
+                id: Date.now(),
+                date: document.getElementById('tip-date').value,
+                amount: parseFloat(document.getElementById('tip-amount').value) || 0,
+                notes: document.getElementById('tip-notes').value
+            };
+            tips.unshift(tip);
+            localStorage.setItem('uberTips', JSON.stringify(tips));
+            e.target.reset();
+            document.getElementById('tip-date').value = today;
+            hideForm('tip');
+            renderTips();
+            updateStats();
+        }
+
+        function deleteTip(id) {
+            if (confirm('Delete this tip?')) {
+                tips = tips.filter(t => t.id !== id);
+                localStorage.setItem('uberTips', JSON.stringify(tips));
+                renderTips();
+                updateStats();
+            }
+        }
+
+        function addExpense(e) {
+            e.preventDefault();
+            const expense = {
+                id: Date.now(),
+                date: document.getElementById('expense-date').value,
+                type: document.getElementById('expense-type').value,
+                amount: parseFloat(document.getElementById('expense-amount').value) || 0,
+                notes: document.getElementById('expense-notes').value
+            };
+            expenses.unshift(expense);
+            localStorage.setItem('uberExpenses', JSON.stringify(expenses));
+            e.target.reset();
+            document.getElementById('expense-date').value = today;
+            hideForm('expense');
+            renderExpenses();
+            updateStats();
+        }
+
+        function deleteExpense(id) {
+            if (confirm('Delete this expense?')) {
+                expenses = expenses.filter(e => e.id !== id);
+                localStorage.setItem('uberExpenses', JSON.stringify(expenses));
+                renderExpenses();
+                updateStats();
+            }
+        }
+
+        function renderRides() {
+            const list = document.getElementById('ride-list');
+            if (rides.length === 0) {
+                list.innerHTML = '<div class="card" style="text-align: center; color: #a0aec0;">No rides logged yet</div>';
+                return;
+            }
+            list.innerHTML = rides.map(ride => `
+                <div class="item">
+                    <div class="item-header">
+                        <div>
+                            <div class="item-amount positive">$${(ride.earnings + ride.tip).toFixed(2)}</div>
+                            <div class="item-date">${ride.date} ${ride.time}</div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteRide(${ride.id})">✕</button>
+                    </div>
+                    ${ride.pickup ? `<div class="item-details">${ride.pickup} → ${ride.dropoff}</div>` : ''}
+                    <div class="item-details">
+                        ${ride.miles > 0 ? `${ride.miles} mi` : ''}
+                        ${ride.duration > 0 ? ` • ${ride.duration} min` : ''}
+                        ${ride.tip > 0 ? ` • +$${ride.tip.toFixed(2)} tip` : ''}
+                    </div>
+                    ${ride.notes ? `<div class="item-details">${ride.notes}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function renderTips() {
+            const list = document.getElementById('tip-list');
+            if (tips.length === 0) {
+                list.innerHTML = '<div class="card" style="text-align: center; color: #a0aec0;">No tips logged yet</div>';
+                return;
+            }
+            list.innerHTML = tips.map(tip => `
+                <div class="item">
+                    <div class="item-header">
+                        <div>
+                            <div class="item-amount positive">+$${tip.amount.toFixed(2)}</div>
+                            <div class="item-date">${tip.date}</div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteTip(${tip.id})">✕</button>
+                    </div>
+                    ${tip.notes ? `<div class="item-details">${tip.notes}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function renderExpenses() {
+            const list = document.getElementById('expense-list');
+            if (expenses.length === 0) {
+                list.innerHTML = '<div class="card" style="text-align: center; color: #a0aec0;">No expenses logged yet</div>';
+                return;
+            }
+            list.innerHTML = expenses.map(expense => `
+                <div class="item">
+                    <div class="item-header">
+                        <div>
+                            <div class="item-amount negative">-$${expense.amount.toFixed(2)}</div>
+                            <div class="item-date">${expense.date}</div>
+                            <div class="item-details" style="text-transform: capitalize;">${expense.type}</div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteExpense(${expense.id})">✕</button>
+                    </div>
+                    ${expense.notes ? `<div class="item-details">${expense.notes}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            const rideEarnings = rides.reduce((sum, r) => sum + r.earnings + r.tip, 0);
+            const tipEarnings = tips.reduce((sum, t) => sum + t.amount, 0);
+            const totalEarnings = rideEarnings + tipEarnings;
+            const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+            const netEarnings = totalEarnings - totalExpenses;
+
+            document.getElementById('total-earnings').textContent = totalEarnings.toFixed(2);
+            document.getElementById('total-expenses').textContent = totalExpenses.toFixed(2);
+            document.getElementById('net-earnings').textContent = netEarnings.toFixed(2);
+            document.getElementById('total-rides').textContent = rides.length;
+
+            // Today's progress
+            const todayRides = rides.filter(r => r.date === today);
+            const todayTips = tips.filter(t => t.date === today);
+            const todayEarnings = todayRides.reduce((sum, r) => sum + r.earnings + r.tip, 0) +
+                                  todayTips.reduce((sum, t) => sum + t.amount, 0);
+            const dailyGoal = 200;
+            const progress = Math.min((todayEarnings / dailyGoal) * 100, 100);
+
+            document.getElementById('goal-progress').textContent = `$${todayEarnings.toFixed(2)} / $${dailyGoal}`;
+            document.getElementById('goal-bar').style.width = progress + '%';
+            document.getElementById('goal-status').textContent = todayRides.length + ' rides today' +
+                (progress >= 100 ? ' • ✓ Goal reached!' : ` • ${(100-progress).toFixed(0)}% to go`);
+        }
+
+        // Initialize
+        renderRides();
+        renderTips();
+        renderExpenses();
+        updateStats();
+
+        // Service worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js')
                 .then(() => console.log('SW registered'))
