@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0f1a">
+<meta name="description" content="GPS mileage tracker and tax deduction calculator for rideshare drivers">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Mileage Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0f1a; --bg2: #0f1629; --bg3: #111827;
+    --surface: rgba(255,255,255,0.03); --border: rgba(255,255,255,0.06);
+    --text: #e2e8f0; --text2: #94a3b8; --text3: #64748b; --text-bright: #f1f5f9;
+    --purple: #6366f1; --purple-light: #a5b4fc; --purple-bg: rgba(99,102,241,0.15); --purple-border: rgba(99,102,241,0.3);
+    --green: #34d399; --green-bright: #10b981; --green-bg: rgba(16,185,129,0.08);
+    --blue: #60a5fa; --yellow: #fbbf24; --amber: #f59e0b;
+    --red: #ef4444; --red-bg: rgba(239,68,68,0.06); --red-border: rgba(239,68,68,0.15);
+    --pink: #f472b6; --violet: #a78bfa;
+    --font: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: 'JetBrains Mono', 'SF Mono', monospace;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html, body { 
+    height: 100%; overflow: hidden;
+    background: linear-gradient(145deg, var(--bg) 0%, var(--bg2) 40%, var(--bg3) 100%);
+    color: var(--text); font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #app { height: 100%; display: flex; flex-direction: column; }
+  input[type="number"], input[type="file"] { font-family: var(--mono); }
+  input[type="number"] {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; color: var(--text); padding: 8px 12px; font-size: 14px;
+    outline: none; width: 100%;
+  }
+  input[type="number"]:focus { border-color: var(--purple-border); }
+  input[type="number"]::-webkit-inner-spin-button { opacity: 0.3; }
+  button { font-family: var(--font); border: none; cursor: pointer; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+  /* Animations */
+  @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(1.8); } }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .fade-in { animation: fadeIn 0.3s ease forwards; }
+
+  /* Header */
+  .header { 
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .logo { 
+    width: 36px; height: 36px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--purple) 0%, #4f46e5 100%);
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .header-title { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; color: var(--text-bright); }
+  .header-sub { font-size: 10px; color: var(--text3); letter-spacing: 0.05em; }
+
+  /* Bottom Nav */
+  .bottom-nav {
+    display: flex; border-top: 1px solid var(--border);
+    background: rgba(10,15,26,0.95); backdrop-filter: blur(12px);
+    padding-bottom: var(--safe-bottom); flex-shrink: 0;
+  }
+  .nav-btn {
+    flex: 1; padding: 10px 4px 8px; background: none;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    font-size: 10px; color: var(--text3); font-weight: 500;
+    transition: color 0.2s;
+  }
+  .nav-btn.active { color: var(--purple-light); }
+  .nav-btn .nav-icon { font-size: 20px; line-height: 1; }
+
+  /* Main scroll area */
+  .main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .content { padding: 16px 20px 24px; }
+
+  /* Tracker button */
+  .track-btn-wrap { display: flex; flex-direction: column; align-items: center; padding: 20px 0 16px; }
+  .track-btn {
+    width: 150px; height: 150px; border-radius: 50%; color: #fff;
+    font-size: 16px; font-weight: 700; letter-spacing: 0.02em;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    transition: all 0.3s ease; border: none;
+  }
+  .track-btn.idle {
+    background: radial-gradient(circle, var(--purple) 0%, #4338ca 70%);
+    border: 4px solid var(--purple-border);
+    box-shadow: 0 0 50px rgba(99,102,241,0.25), inset 0 -3px 10px rgba(0,0,0,0.3);
+  }
+  .track-btn.active {
+    background: radial-gradient(circle, var(--red) 0%, #b91c1c 70%);
+    border: 4px solid var(--red-border);
+    box-shadow: 0 0 50px rgba(239,68,68,0.3), inset 0 -3px 10px rgba(0,0,0,0.3);
+  }
+  .track-btn .btn-icon { font-size: 26px; }
+
+  /* Live stats bar */
+  .live-bar {
+    margin-top: 16px; display: flex; gap: 16px; align-items: center;
+    padding: 12px 20px; background: var(--red-bg);
+    border: 1px solid var(--red-border); border-radius: 12px;
+  }
+  .live-dot { position: relative; width: 10px; height: 10px; }
+  .live-dot::before {
+    content: ''; position: absolute; inset: 0; border-radius: 50%;
+    background: var(--red); animation: pulse 1.5s ease-in-out infinite;
+  }
+  .live-dot::after {
+    content: ''; position: absolute; inset: 2px; border-radius: 50%;
+    background: var(--red);
+  }
+  .live-label { font-size: 11px; color: #f87171; font-weight: 600; letter-spacing: 0.06em; }
+  .stat-block { text-align: center; }
+  .stat-label { font-size: 10px; color: var(--text3); letter-spacing: 0.06em; font-weight: 600; }
+  .stat-val { font-size: 22px; font-weight: 700; color: var(--text-bright); font-family: var(--mono); }
+  .stat-val-sm { font-size: 13px; font-weight: 600; font-family: var(--mono); }
+
+  /* Cards */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; margin-bottom: 12px;
+  }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text-bright); margin-bottom: 12px; }
+
+  /* Trip items */
+  .trip-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px; margin-bottom: 8px;
+    border-left: 3px solid var(--purple);
+  }
+  .trip-item.personal { border-left-color: #475569; }
+  .trip-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .trip-date { font-size: 13px; font-weight: 600; color: var(--text-bright); }
+  .trip-time { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .trip-actions { display: flex; gap: 6px; }
+  .tag-btn {
+    padding: 3px 8px; border-radius: 5px; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .tag-btn.biz { background: var(--purple-bg); border: 1px solid var(--purple-border); color: var(--purple-light); }
+  .tag-btn.pers { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: var(--text3); }
+  .del-btn { padding: 3px 7px; border-radius: 5px; font-size: 11px; background: transparent; border: 1px solid rgba(239,68,68,0.2); color: var(--red); }
+  .trip-stats { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .trip-stat-val { font-size: 18px; font-weight: 700; font-family: var(--mono); }
+  .trip-earnings-input {
+    font-size: 14px !important; max-width: 100px; padding: 5px 8px !important;
+    color: var(--yellow) !important;
+  }
+
+  /* Summary stat grid */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .stat-card .label { font-size: 10px; color: var(--text3); letter-spacing: 0.08em; font-weight: 600; margin-bottom: 4px; }
+  .stat-card .value { font-size: 22px; font-weight: 700; font-family: var(--mono); }
+
+  /* Tax dashboard specific */
+  .income-row { margin-bottom: 10px; }
+  .income-row-head { display: flex; justify-content: space-between; margin-bottom: 3px; }
+  .income-row-label { font-size: 12px; color: var(--text2); }
+  .income-row-val { font-size: 12px; font-family: var(--mono); font-weight: 500; }
+  .mini-bar { width: 100%; height: 5px; background: rgba(255,255,255,0.06); border-radius: 3px; }
+  .mini-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+  .divider { border-top: 1px solid var(--border); margin: 10px 0; }
+  .tax-row { display: flex; justify-content: space-between; padding: 6px 0; }
+  .tax-label { font-size: 12px; color: var(--text2); }
+  .tax-val { font-size: 14px; font-weight: 600; font-family: var(--mono); }
+
+  /* Info boxes */
+  .info-box { padding: 12px 14px; border-radius: 8px; font-size: 12px; line-height: 1.5; margin-top: 12px; }
+  .info-box.warn { background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.12); color: var(--yellow); }
+  .info-box.green { background: var(--green-bg); border: 1px solid rgba(16,185,129,0.15); color: var(--green); }
+  .info-box.blue { background: var(--purple-bg); border: 1px solid var(--purple-border); color: var(--purple-light); }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 40px 20px; }
+  .empty-icon { font-size: 40px; margin-bottom: 10px; }
+  .empty-title { font-size: 15px; color: var(--text2); font-weight: 500; }
+  .empty-sub { font-size: 12px; color: var(--text3); margin-top: 6px; }
+
+  /* Upload area */
+  .upload-area {
+    border: 2px dashed rgba(255,255,255,0.1); border-radius: 12px;
+    padding: 24px; text-align: center; cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .upload-area:hover { border-color: var(--purple-border); }
+  .upload-area input { display: none; }
+
+  /* Action buttons */
+  .btn-primary {
+    padding: 10px 18px; background: linear-gradient(135deg, var(--green-bright), #059669);
+    border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600;
+    box-shadow: 0 2px 10px rgba(16,185,129,0.25);
+  }
+  .btn-outline {
+    padding: 10px 18px; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+    color: var(--text2); font-size: 13px; font-weight: 500;
+  }
+  .btn-export {
+    padding: 8px 14px; background: var(--purple-bg);
+    border: 1px solid var(--purple-border); border-radius: 8px;
+    color: var(--purple-light); font-size: 11px; font-weight: 600;
+  }
+  .btn-danger {
+    padding: 8px 14px; background: var(--red-bg);
+    border: 1px solid var(--red-border); border-radius: 8px;
+    color: var(--red); font-size: 11px; font-weight: 600;
+  }
+
+  /* GPS status */
+  .gps-msg { margin-top: 10px; font-size: 12px; text-align: center; }
+
+  /* Settings section */
+  .setting-group { margin-bottom: 20px; }
+  .setting-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; font-weight: 500; }
+  .setting-help { font-size: 11px; color: var(--text3); margin-top: 4px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+// ── Helpers ──────────────────────────────────────────────
+const STORAGE_KEY = "uber-mileage-trips";
+const IRS_RATE = 0.70;
+const SE_TAX = 0.153;
+const EST_TAX = 0.12;
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 3958.8;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function loadTrips() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function saveTrips(t) { localStorage.setItem(STORAGE_KEY, JSON.stringify(t)); }
+
+function fmt$(n) { return "$" + Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+function fmtTime(iso) { return new Date(iso).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); }
+function fmtDate(iso) { return new Date(iso).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}); }
+function fmtDur(ms) { const m=Math.floor(ms/60000),h=Math.floor(m/60); return h>0?`${h}h ${m%60}m`:`${m}m`; }
+
+function MiniBar({value, max, color}) {
+  const pct = max > 0 ? Math.min(value/max*100,100) : 0;
+  return (
+    <div className="mini-bar">
+      <div className="mini-bar-fill" style={{width:`${pct}%`, background:color}}/>
+    </div>
+  );
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split("\n");
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(",").map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g,"_"));
+  return lines.slice(1).map(line => {
+    const v = line.split(",").map(s => s.trim());
+    const o = {}; headers.forEach((h,i) => o[h] = v[i]||"");
+    return {
+      date: o.date||o.trip_date||o.start_time||o.request_time||"",
+      miles: parseFloat(o.miles||o.distance_miles_||o.trip_distance||o.distance||0),
+      fare: parseFloat(o.fare||o.fare_amount||o.trip_fare||o.earnings||0),
+      tips: parseFloat(o.tips||o.tip||o.tip_amount||0),
+      surges: parseFloat(o.surge||o.surges||o.surge_amount||0),
+      tolls: parseFloat(o.tolls||o.toll||o.toll_amount||0),
+      fees: parseFloat(o.fees||o.uber_fee||o.service_fee||o.mileage_deduction||0),
+      tagged: o.tag||o.tagged||"business",
+    };
+  }).filter(r => r.date);
+}
+
+
+// ── App ──────────────────────────────────────────────────
+function App() {
+  const [page, setPage] = useState("track");
+  const [trips, setTrips] = useState(loadTrips);
+  const [tracking, setTracking] = useState(false);
+  const [curMiles, setCurMiles] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const [curTrip, setCurTrip] = useState(null);
+  const [gpsStatus, setGpsStatus] = useState("idle");
+  const [gpsAcc, setGpsAcc] = useState(null);
+  const [csvTrips, setCsvTrips] = useState([]);
+  const [mileageRate, setMileageRate] = useState(IRS_RATE);
+  const [addlExp, setAddlExp] = useState(0);
+  const [editEarnings, setEditEarnings] = useState({});
+
+  const lastPos = useRef(null);
+  const watchRef = useRef(null);
+  const timerRef = useRef(null);
+
+  const persist = useCallback((t) => { setTrips(t); saveTrips(t); }, []);
+
+  // Elapsed timer
+  useEffect(() => {
+    if (tracking && curTrip) {
+      timerRef.current = setInterval(() => setElapsed(Date.now() - new Date(curTrip.startTime).getTime()), 1000);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [tracking, curTrip]);
+
+  const startTracking = useCallback(() => {
+    if (!navigator.geolocation) { setGpsStatus("unsupported"); return; }
+    setGpsStatus("acquiring");
+    navigator.geolocation.getCurrentPosition(pos => {
+      const trip = {
+        id: Date.now().toString(),
+        startTime: new Date().toISOString(),
+        startLat: pos.coords.latitude, startLng: pos.coords.longitude,
+        endTime:null, miles:0, earnings:0, tagged:"business", source:"gps",
+      };
+      lastPos.current = {lat:pos.coords.latitude, lng:pos.coords.longitude};
+      setCurTrip(trip); setTracking(true); setCurMiles(0); setElapsed(0);
+      setGpsStatus("tracking"); setGpsAcc(Math.round(pos.coords.accuracy));
+
+      watchRef.current = navigator.geolocation.watchPosition(p => {
+        setGpsAcc(Math.round(p.coords.accuracy));
+        if (p.coords.accuracy > 50) return;
+        const {latitude:lat, longitude:lng} = p.coords;
+        if (lastPos.current) {
+          const d = haversine(lastPos.current.lat, lastPos.current.lng, lat, lng);
+          if (d > 0.005 && d < 2) setCurMiles(prev => prev + d);
+        }
+        lastPos.current = {lat, lng};
+      }, () => setGpsStatus("error_watch"),
+      {enableHighAccuracy:true, maximumAge:3000, timeout:10000});
+    },
+    err => setGpsStatus(err.code===1?"denied":"error"),
+    {enableHighAccuracy:true, timeout:15000});
+  }, []);
+
+  const stopTracking = useCallback(() => {
+    if (watchRef.current!==null) { navigator.geolocation.clearWatch(watchRef.current); watchRef.current=null; }
+    clearInterval(timerRef.current);
+    if (curTrip && curMiles > 0.01) {
+      const done = {
+        ...curTrip,
+        endTime: new Date().toISOString(),
+        miles: Math.round(curMiles*100)/100,
+        duration: Date.now() - new Date(curTrip.startTime).getTime(),
+      };
+      persist([done, ...trips]);
+    }
+    setTracking(false); setCurTrip(null); setCurMiles(0); setElapsed(0); setGpsStatus("idle");
+  }, [curTrip, curMiles, trips, persist]);
+
+  const deleteTrip = useCallback(id => persist(trips.filter(t=>t.id!==id)), [trips, persist]);
+  const toggleTag = useCallback(id => persist(trips.map(t=>t.id===id?{...t,tagged:t.tagged==="business"?"personal":"business"}:t)), [trips, persist]);
+  const updateEarnings = useCallback((id,v) => persist(trips.map(t=>t.id===id?{...t,earnings:parseFloat(v)||0}:t)), [trips, persist]);
+
+  const exportCSV = useCallback(() => {
+    const header = "Date,Start Time,End Time,Miles,Duration (min),Tag,Earnings,Mileage Deduction\n";
+    const rows = trips.map(t => {
+      const dur = t.duration ? Math.round(t.duration/60000) : 0;
+      return `${(t.startTime||t.date||"").split("T")[0]},${t.startTime?fmtTime(t.startTime):""},${t.endTime?fmtTime(t.endTime):""},${t.miles},${dur},${t.tagged},${t.earnings||0},${(t.miles*mileageRate).toFixed(2)}`;
+    }).join("\n");
+    const blob = new Blob([header+rows],{type:"text/csv"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `mileage-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+  }, [trips, mileageRate]);
+
+  const handleCSV = useCallback(e => {
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = evt => {
+      const parsed = parseCSV(evt.target.result);
+      if (parsed.length > 0) {
+        const imported = parsed.map((r,i) => ({
+          id: `csv-${Date.now()}-${i}`,
+          startTime: r.date.includes("T") ? r.date : r.date+"T00:00:00",
+          date: r.date, miles: r.miles, fare: r.fare||0, tips: r.tips||0,
+          surges: r.surges||0, tolls: r.tolls||0, fees: r.fees||0,
+          earnings: (r.fare||0)+(r.tips||0)+(r.surges||0),
+          tagged: r.tagged||"business", source:"csv",
+        }));
+        persist([...imported, ...trips]);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  }, [trips, persist]);
+
+  // Combined stats
+  const stats = useMemo(() => {
+    const biz = trips.filter(t=>t.tagged==="business");
+    const totalMiles = biz.reduce((s,t)=>s+(t.miles||0),0);
+    const totalEarnings = biz.reduce((s,t)=>s+(t.earnings||0),0);
+    const totalFares = biz.reduce((s,t)=>s+(t.fare||0),0);
+    const totalTips = biz.reduce((s,t)=>s+(t.tips||0),0);
+    const totalTolls = biz.reduce((s,t)=>s+(t.tolls||0),0);
+    const totalFees = biz.reduce((s,t)=>s+(t.fees||0),0);
+    const mileageDed = totalMiles * mileageRate;
+    const totalDed = mileageDed + totalTolls + totalFees + addlExp;
+    const grossIncome = totalEarnings || (totalFares+totalTips);
+    const netTaxable = Math.max(0, grossIncome - totalDed);
+    const seTax = netTaxable * SE_TAX;
+    const incTax = netTaxable * EST_TAX;
+    return {
+      bizTrips: biz.length, totalMiles, grossIncome,
+      mileageDed, totalDed, netTaxable, totalTolls, totalFees,
+      seTax, incTax, totalTax: seTax+incTax,
+      takeHome: grossIncome - totalFees - seTax - incTax,
+      avgPerMile: totalMiles>0 ? grossIncome/totalMiles : 0,
+    };
+  }, [trips, mileageRate, addlExp]);
+
+  // ── Render ─────────────────────────────────────────────
+  return (
+    <>
+      {/* Header */}
+      <div className="header">
+        <div className="header-left">
+          <div className="logo">📍</div>
+          <div>
+            <div className="header-title">Mileage Tracker</div>
+            <div className="header-sub">RIDESHARE TAX TRACKER</div>
+          </div>
+        </div>
+        {trips.length > 0 && <button className="btn-export" onClick={exportCSV}>⬇ CSV</button>}
+      </div>
+
+      {/* Main */}
+      <div className="main">
+
+        {/* ─── TRACK PAGE ─── */}
+        {page === "track" && (
+          <div className="content">
+            <div className="track-btn-wrap">
+              <button className={`track-btn ${tracking?"active":"idle"}`} onClick={tracking?stopTracking:startTracking}>
+                <span className="btn-icon">{tracking?"■":"▶"}</span>
+                <span>{tracking?"STOP":"START"}</span>
+              </button>
+
+              {tracking && (
+                <div className="live-bar fade-in">
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    <div className="live-dot"/>
+                    <span className="live-label">LIVE</span>
+                  </div>
+                  <div className="stat-block">
+                    <div className="stat-label">MILES</div>
+                    <div className="stat-val">{curMiles.toFixed(2)}</div>
+                  </div>
+                  <div className="stat-block">
+                    <div className="stat-label">TIME</div>
+                    <div className="stat-val">{fmtDur(elapsed)}</div>
+                  </div>
+                  <div className="stat-block">
+                    <div className="stat-label">GPS</div>
+                    <div className="stat-val-sm" style={{color: gpsAcc&&gpsAcc<15?"var(--green)":gpsAcc&&gpsAcc<30?"var(--yellow)":"var(--red)"}}>
+                      ±{gpsAcc||"?"}m
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {gpsStatus==="acquiring" && <div className="gps-msg" style={{color:"var(--yellow)"}}>📡 Acquiring GPS…</div>}
+              {gpsStatus==="denied" && <div className="gps-msg" style={{color:"var(--red)"}}>⚠️ Location denied. Enable in settings.</div>}
+              {gpsStatus==="error" && <div className="gps-msg" style={{color:"var(--red)"}}>⚠️ GPS error. Try again.</div>}
+            </div>
+
+            {/* Quick stats */}
+            {trips.length > 0 && (
+              <div className="stat-grid" style={{marginBottom:16}}>
+                <div className="stat-card">
+                  <div className="label">BIZ MILES</div>
+                  <div className="value" style={{color:"var(--blue)"}}>{stats.totalMiles.toFixed(1)}</div>
+                </div>
+                <div className="stat-card">
+                  <div className="label">DEDUCTION</div>
+                  <div className="value" style={{color:"var(--green)"}}>{fmt$(stats.mileageDed)}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Trip list */}
+            {trips.length === 0 ? (
+              <div className="empty">
+                <div className="empty-icon">🛣️</div>
+                <div className="empty-title">No trips yet</div>
+                <div className="empty-sub">Tap START when you go online, STOP when done.</div>
+              </div>
+            ) : (
+              trips.slice(0,50).map(trip => (
+                <div key={trip.id} className={`trip-item ${trip.tagged==="personal"?"personal":""}`}>
+                  <div className="trip-head">
+                    <div>
+                      <div className="trip-date">{fmtDate(trip.startTime||trip.date)}</div>
+                      <div className="trip-time">
+                        {trip.startTime && fmtTime(trip.startTime)}
+                        {trip.endTime && ` → ${fmtTime(trip.endTime)}`}
+                        {trip.duration && ` (${fmtDur(trip.duration)})`}
+                      </div>
+                    </div>
+                    <div className="trip-actions">
+                      <button className={`tag-btn ${trip.tagged==="business"?"biz":"pers"}`} onClick={()=>toggleTag(trip.id)}>
+                        {trip.tagged==="business"?"BIZ":"PERS"}
+                      </button>
+                      <button className="del-btn" onClick={()=>deleteTrip(trip.id)}>✕</button>
+                    </div>
+                  </div>
+                  <div className="trip-stats">
+                    <div>
+                      <div className="stat-label">MILES</div>
+                      <div className="trip-stat-val" style={{color:"var(--purple-light)"}}>{(trip.miles||0).toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div className="stat-label">DEDUCT</div>
+                      <div className="trip-stat-val" style={{color:"var(--green)"}}>{fmt$((trip.miles||0)*mileageRate)}</div>
+                    </div>
+                    <div style={{flex:1,minWidth:80}}>
+                      <div className="stat-label">EARNED</div>
+                      <input
+                        type="number" step="0.01" placeholder="$0.00"
+                        className="trip-earnings-input"
+                        value={editEarnings[trip.id]!==undefined ? editEarnings[trip.id] : (trip.earnings||"")}
+                        onChange={e => setEditEarnings(p=>({...p,[trip.id]:e.target.value}))}
+                        onBlur={e => { updateEarnings(trip.id, e.target.value); setEditEarnings(p=>{const n={...p};delete n[trip.id];return n;}); }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+            {trips.length > 50 && <div style={{textAlign:"center",color:"var(--text3)",fontSize:12,padding:12}}>Showing 50 of {trips.length}</div>}
+          </div>
+        )}
+
+        {/* ─── TAX PAGE ─── */}
+        {page === "tax" && (
+          <div className="content">
+            <div className="stat-grid">
+              {[
+                {l:"GROSS INCOME",v:fmt$(stats.grossIncome),c:"var(--green)"},
+                {l:"BIZ MILES",v:stats.totalMiles.toFixed(1),c:"var(--blue)"},
+                {l:"DEDUCTIONS",v:fmt$(stats.totalDed),c:"var(--amber)"},
+                {l:"NET TAXABLE",v:fmt$(stats.netTaxable),c:"var(--violet)"},
+              ].map(s=>(
+                <div key={s.l} className="stat-card">
+                  <div className="label">{s.l}</div>
+                  <div className="value" style={{color:s.c}}>{s.v}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Income */}
+            <div className="card">
+              <div className="card-title">💰 Income</div>
+              {[
+                {l:"Trip Earnings",v:stats.grossIncome,c:"var(--green)"},
+              ].map(r=>(
+                <div key={r.l} className="income-row">
+                  <div className="income-row-head">
+                    <span className="income-row-label">{r.l}</span>
+                    <span className="income-row-val" style={{color:r.c}}>{fmt$(r.v)}</span>
+                  </div>
+                  <MiniBar value={r.v} max={stats.grossIncome||1} color={r.c}/>
+                </div>
+              ))}
+            </div>
+
+            {/* Deductions */}
+            <div className="card">
+              <div className="card-title">📋 Deductions</div>
+              {[
+                {l:`Mileage (${stats.totalMiles.toFixed(1)} mi × $${mileageRate.toFixed(2)})`,v:stats.mileageDed,c:"var(--blue)"},
+                ...(stats.totalFees>0?[{l:"Uber/Lyft Fees",v:stats.totalFees,c:"var(--amber)"}]:[]),
+                ...(stats.totalTolls>0?[{l:"Tolls",v:stats.totalTolls,c:"var(--violet)"}]:[]),
+                ...(addlExp>0?[{l:"Additional Expenses",v:addlExp,c:"var(--pink)"}]:[]),
+              ].map(r=>(
+                <div key={r.l} className="income-row">
+                  <div className="income-row-head">
+                    <span className="income-row-label">{r.l}</span>
+                    <span className="income-row-val" style={{color:r.c}}>−{fmt$(r.v)}</span>
+                  </div>
+                  <MiniBar value={r.v} max={stats.totalDed||1} color={r.c}/>
+                </div>
+              ))}
+              <div className="divider"/>
+              <div className="tax-row">
+                <span className="tax-label" style={{fontWeight:600,color:"var(--text-bright)"}}>Total Deductions</span>
+                <span className="tax-val" style={{color:"var(--amber)"}}>−{fmt$(stats.totalDed)}</span>
+              </div>
+            </div>
+
+            {/* Tax Estimates */}
+            <div className="card" style={{background:"rgba(16,185,129,0.04)",borderColor:"rgba(16,185,129,0.12)"}}>
+              <div className="card-title" style={{color:"var(--green)"}}>🧾 Estimated Taxes</div>
+              {[
+                {l:"Self-Employment (15.3%)",v:stats.seTax,c:"var(--amber)"},
+                {l:"Income Tax (~12%)",v:stats.incTax,c:"var(--violet)"},
+                {l:"Total Est. Tax",v:stats.totalTax,c:"var(--red)"},
+                {l:"Est. Take-Home",v:stats.takeHome,c:"var(--green)"},
+              ].map(r=>(
+                <div key={r.l} className="tax-row">
+                  <span className="tax-label">{r.l}</span>
+                  <span className="tax-val" style={{color:r.c}}>{fmt$(r.v)}</span>
+                </div>
+              ))}
+              <div className="info-box warn" style={{marginTop:12}}>
+                ⚠️ Rough estimates only. Actual taxes depend on total income, filing status, and state. Consult a tax professional.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── IMPORT PAGE ─── */}
+        {page === "import" && (
+          <div className="content">
+            <div className="card">
+              <div className="card-title">📂 Import Uber/Lyft CSV</div>
+              <label className="upload-area">
+                <div style={{fontSize:28,marginBottom:8}}>📄</div>
+                <div style={{fontSize:14,color:"var(--text2)",fontWeight:500}}>Tap to select CSV file</div>
+                <div style={{fontSize:12,color:"var(--text3)",marginTop:4}}>From drivers.uber.com → Tax Info</div>
+                <input type="file" accept=".csv" onChange={handleCSV}/>
+              </label>
+            </div>
+
+            <div className="card">
+              <div className="card-title">Expected Columns</div>
+              {["Date / Trip Date","Miles / Distance","Fare / Earnings","Tips (optional)","Tolls (optional)","Fees (optional)"].map(c=>(
+                <div key={c} style={{fontSize:12,color:"var(--text2)",padding:"3px 0",fontFamily:"var(--mono)"}}>→ {c}</div>
+              ))}
+            </div>
+
+            <div className="info-box blue">
+              💡 Imported trips are merged with GPS-tracked trips. Tag them as Business or Personal in the Trip Log.
+            </div>
+          </div>
+        )}
+
+        {/* ─── SETTINGS PAGE ─── */}
+        {page === "settings" && (
+          <div className="content">
+            <div className="card">
+              <div className="card-title">⚙️ Tax Settings</div>
+              <div className="setting-group">
+                <div className="setting-label">IRS Mileage Rate ($/mi)</div>
+                <input type="number" step="0.01" value={mileageRate} onChange={e=>setMileageRate(parseFloat(e.target.value)||IRS_RATE)}/>
+                <div className="setting-help">2025 standard rate: $0.70/mile</div>
+              </div>
+              <div className="setting-group">
+                <div className="setting-label">Additional Deductible Expenses ($)</div>
+                <input type="number" step="0.01" value={addlExp||""} placeholder="Phone, insurance, supplies…" onChange={e=>setAddlExp(parseFloat(e.target.value)||0)}/>
+                <div className="setting-help">Phone plan, car insurance (biz %), car wash, chargers, etc.</div>
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-title">📱 Usage Tips</div>
+              <div style={{fontSize:12,color:"var(--text2)",lineHeight:1.7}}>
+                Keep this page open while driving. Grant "precise" location when prompted.
+                Start tracking when you go online in Uber/Lyft, stop when done — this captures deadhead miles between trips that are fully deductible.
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-title">🗄️ Data</div>
+              <div style={{fontSize:12,color:"var(--text3)",marginBottom:12}}>
+                {trips.length} trips stored locally on this device.
+              </div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <button className="btn-export" onClick={exportCSV} disabled={trips.length===0}>⬇ Export CSV</button>
+                <button className="btn-danger" onClick={()=>{if(confirm("Delete all trips? This cannot be undone.")){persist([]);}}}>
+                  🗑 Delete All
+                </button>
+              </div>
+            </div>
+
+            <div className="info-box green">
+              To install as an app: tap your browser's share/menu button → "Add to Home Screen". This gives you a full-screen app icon.
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Navigation */}
+      <div className="bottom-nav">
+        {[
+          {id:"track",icon:"📍",label:"Track"},
+          {id:"tax",icon:"🧾",label:"Taxes"},
+          {id:"import",icon:"📂",label:"Import"},
+          {id:"settings",icon:"⚙️",label:"Settings"},
+        ].map(n=>(
+          <button key={n.id} className={`nav-btn ${page===n.id?"active":""}`} onClick={()=>setPage(n.id)}>
+            <span className="nav-icon">{n.icon}</span>
+            <span>{n.label}</span>
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
